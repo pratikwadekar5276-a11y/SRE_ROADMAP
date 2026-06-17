@@ -10,11 +10,47 @@
 
 - DAY 1: Setup & Hello World: Installing Python, VS Code, running your first script.
 - DAY 2: Variables & Data Types: Understanding Strings, Integers, Floats, and Booleans.
+
+varible - varible is container that holds data. Data might be integer, string, Booleans
+          varible is like creating placeholder in memory and assigning it some values
+
+Data type - Data type specifies the type of value varible holds.
+
+if we use below function we can specify what type of data is stored in varible
+
+type(a)
+
 - DAY 3: User Input & Basic Math: Using input() to accept data and performing basic arithmetic.
+
+In python we can take user input directly by using input() funtion. this input function gives return value as string/integer as we passed in varible
+
 - DAY 4: Conditional Statements (Part 1): Working with 'if', 'else', and basic comparison.
+
+> greater than
+< less than
+== equal to
+!= not equal to
+
+a = 4
+b = "4"
+
+a is b -- exact location of object in memory
+a == b -- value
+
+suppose you have passed value integer as 4 and string as "4" these are basically same things
+
 - DAY 5: Conditional Statements (Part 2): Complex logic using 'elif', 'and', 'or', 'not'.
+and - goes inside loop if both conditions are satisfied
+or - goes inside inside loop if one of the condition is True
+not - checks whether condition is satisfied or not 
+
 - DAY 6: Introduction to Loops: Writing your first 'while' loops for simple repetitions.
+While loop executes the statement till condition is true
+We can also use else with while loop
+
 - DAY 7: The Power of 'For' Loops: Iterating over ranges and basic sequences.
+For loops can inerate over a sequence of iterable objects in python. Iterating over a sequence is nothing but iterating over strings lists tuples sets dictionaries
+
 - DAY 8: Loop Control: How and when to use 'break' and 'continue' statements cleanly.
 - DAY 9: Working with Strings: String concatenation, basic indexing, and essential methods (.lower, .upper).
 - DAY 10: Introduction to Lists: Creating lists, adding items (.append), and removing items.
