@@ -1,0 +1,212 @@
+Linux and Linux Internals
+
+===================================================================
+          COMPLETE LINUX & LINUX INTERNALS - 30 DAYS MASTER PLAN
+          Time: 07:15 AM to 08:15 AM | Focus: Basic to Google Level SRE
+===================================================================
+
+[PHASE 1: THE FOUNDATION & CORE COMMANDS (DAYS 1 - 10)]
+
+DAY 1: Introduction to UNIX/Linux & macOS Terminal
+- Architecture: Monolithic vs Microkernel. How macOS (Darwin/BSD) relates to Linux.
+- Practice: Terminal navigation, understanding the Shell (Zsh/Bash), 'man' pages.
+
+Linux is open source operating system based on Linux
+It is primerily known for its security and flexibility
+
+Difference between linux and UNIX
+Unix is licensed and linux is opensource
+Linux is inspired by unix and is designed to be unix like.
+It follows many of the same principles and standerds making it compatible with unix software and Commands
+
+Linux is not an operating system
+Linux is opensource kernal
+Kernal is core part of the operating system, managing system resources and communication between hardware and software
+
+Linux Distributions
+An operating system made from a software collection
+which includeds the linux kernal and often a package managment system
+eg ubuntu RHEL centos
+Linux distribut  = Linux Kernal + Package Managment 
+
+Linux Key Features
+Open Source - Source code is freely available and can be modified
+Multiuser - multiple user can be access system resources simultaneously
+Multitasking - Can run multiple tasks simultaneously
+Security - Strong security features and regular updates
+Portability - can run on various platforms
+
+
+DAY 2: The Linux Directory Structure (FHS)
+- Concept: Why Linux follows the Filesystem Hierarchy Standard.
+- Internals: Deep dive into /etc (configs), /var (logs), /boot, and /opt.
+- Practice: Navigating and identifying system configuration entry points.
+
+Linux follows the Filesystem Hierarchy Standard to ensure predictability, software compatibility, and easy administration across different distributions by keeping file locations uniform.
+
+pwd - present working directory
+/ - root directory
+
+OS store and manage data on disk or partitions using a structure called Filesystem
+File system includes files, directories and its related permissions
+
+types of Filesystem
+ext3 extended3
+ext4 extended4
+XFS extends file system
+
+XFS - optimized for large files and volumes, offering superior performance and scalability
+ext4 - Performs well accroess various file sizes but less efficient with extremly large files
+
+To check filesystem on Linux
+lsblk -f 
+df -Th
+cat /etc/fstab
+
+Inode
+Inode in linux is a data strucuture that stores metadata about file or Directory
+THe file system uses the inode number to locate the inode which then contains pointers to data blocks where actual file data is stored
+ls -li
+
+/ - root directory
+/bin - user binaries such as common Commands
+/sbin - contains system Commands
+/etc - contains configuration
+/home - home directory for users
+/var - variable data such as logs
+/tmp - temp files created by system and users
+/boot - holds files that needed for system to boot up
+/dev - device files
+/lib, /lib64 - contains shared libraries and kernal modules which are needed to boot the system and run commands in root filesystem
+/opt - contains software packages that are not part of default packages
+/usr - contains user binaries, libraries, documentation, and source code for all secondary software
+
+
+
+DAY 3: File & Directory Operations (The SRE Essentials)
+- Commands: mkdir, rm, cp, mv, touch, cat, less, head, tail.
+- Practice: Efficient navigation shortcuts, reading logs in real-time using 'tail -f'.
+
+mkdir - create new directory
+rm - remove file
+rm -r - remove directory. r --> recursive
+cp - copy file
+cp -r - copy directory 
+touch - create an empty file
+cat - view file
+less - use to view large file
+more - use to view medium range file
+head - show first 10 records from file
+head -n - shows first n records from file 
+tail - shows last 10 records from file 
+tail -n - shows last n number of records
+tail -f - follows output/ shows live logs
+
+
+DAY 4: Crucial Text Filters & Redirections
+- Concept: Standard Input (stdin), Output (stdout), and Error (stderr).
+- Commands: redirection (>, >>, 2>), pipes (|), tee, sort, uniq, wc.
+- Practice: Redirecting application errors to separate files safely.
+
+
+
+DAY 5: Linux Users, Groups & Security Layer
+- Concept: Multi-user architecture. Root user vs Standard user.
+- Commands: useradd, groupadd, usermod, passwd. Understanding /etc/passwd and /etc/shadow.
+- Practice: Creating restricted service users for applications.
+
+DAY 6 & 7: File Permissions & Ownership (Deep Dive)
+- Concept: Read, Write, Execute (rwx) in Numeric and Symbolic modes.
+- Commands: chmod, chown, chgrp, umask (Default permissions).
+- Advanced: Special permissions - SUID, SGID, and Sticky Bit (Why they matter in security).
+
+DAY 8: Advanced Package Management & Repositories
+- Concept: How Linux manages software packages. Dependencies resolution.
+- Tools: apt, yum/dnf, and Homebrew (on Mac).
+- Practice: Compiling a basic package or utility from source code.
+
+DAY 9 & 10: Finding Files & Pattern Matching
+- Commands: find, locate, which, whereis.
+- Regex: Introduction to Regular Expressions for text matching.
+- Practice: Locating all log files larger than 100MB and moving them to a backup folder.
+
+
+[PHASE 2: MEMORY, PROCESSES & SIGNALS (DAYS 11 - 20)]
+
+DAY 11: Linux Architecture & Memory Spaces
+- Concept: Separation of Powers - User Space vs Kernel Space.
+- Internals: Hardware rings (Ring 0 vs Ring 3), CPU execution modes.
+
+DAY 12: System Calls (Under the Hood Execution)
+- Concept: How user applications request services from the Kernel.
+- Tools: strace (Linux) / dtruss (macOS).
+- Practice: Tracing the exact system calls (open, read, write) made by 'cat file.txt'.
+
+DAY 13: Process Lifecycle & Core Subsystems
+- Concept: How the OS spawns processes using fork(), exec(), and wait().
+- Internals: Process Control Block (PCB), Process IDs (PID, PPID).
+- Practice: Inspecting process trees using 'pstree' and 'ps -ef'.
+
+DAY 14: Process States & Resource Analysis
+- Concept: Running, Sleeping (Interruptible/Uninterruptible), Stopped, and Zombie states.
+- Internals: Why Zombie processes exist and why they cannot be killed using 'kill'.
+- Practice: Simulating and monitoring process states using 'top' and 'htop'.
+
+DAY 15: Signals & Inter-Process Communication (IPC)
+- Concept: Kernel alerts - SIGINT (2), SIGTERM (15), SIGKILL (9).
+- Internals: Architectural difference between SIGTERM (graceful shutdown) and SIGKILL (hard drop).
+- Practice: Managing background jobs using bg, fg, jobs, and nohup.
+
+DAY 16 & 17: Virtual File System (VFS) & Inodes
+- Concept: VFS abstraction layer. Inode structure (Metadata vs Data blocks).
+- Internals: Why deleting a large file doesn't free up space if a process keeps the File Descriptor open.
+- Practice: Debugging unreleased file handlers using 'lsof'. Hard links vs Soft links.
+
+DAY 18: Memory Management & Virtual RAM
+- Concept: Physical RAM vs Virtual Memory. Paging mechanics and Swap space.
+- Internals: Page Faults (Minor vs Major). Thrashing and its impact on CPU wait times.
+- Practice: Monitoring page caching and swap transitions using 'vmstat'.
+
+DAY 19: Out of Memory (OOM) Killer Mechanics
+- Concept: What happens when the system runs out of physical memory and swap.
+- Internals: How the Kernel evaluates and assigns the 'oom_score' to terminate heavy processes.
+- Practice: Investigating system crashes and process terminations via 'dmesg | grep -i oom'.
+
+DAY 20: Storage Internals & File Systems
+- Concept: Block devices, Partition tables (GPT/MBR), File System Types (ext4, XFS).
+- Practice: Mounting disks, checking disk space availability via 'df -h' and directory sizes via 'du -sh'.
+
+
+[PHASE 3: NETWORKING, AUTOMATION & GOOGLE SRE LEVEL PREP (DAYS 21 - 30)]
+
+DAY 21: Linux Networking Stack
+- Concept: Network sockets, TCP/IP stack implementation inside the Kernel.
+- Practice: Debugging port bindings and tracking live connections using 'ss', 'netstat', and 'lsof -i'.
+
+DAY 22: Network Troubleshooting & Routing
+- Commands: ping, traceroute, dig, nslookup, ip route, ifconfig/ip addr.
+- Practice: Simulating network drops and verifying DNS resolution paths.
+
+DAY 23 & 24: The SRE Power Tools (Log Parsing Mastery)
+- Concept: High-velocity log analysis without UI tools.
+- Tools: Deep dive into grep (ripgrep), sed (stream editor), and awk (pattern scanning language).
+- Practice: Writing one-liner awk scripts to parse 1GB application logs and extract unique error IPs under 5 seconds.
+
+DAY 25: Systemd Init Process & Service Architecture
+- Concept: Linux Boot Process sequence. PID 1 execution (systemd vs launchd).
+- Practice: Writing a custom, production-grade systemd service unit file for a background python app.
+
+DAY 26: Cron Jobs & Task Automation
+- Concept: Crontab syntax, system-wide cron jobs, anacron.
+- Practice: Setting up automated backup scripts running every night at 2:00 AM.
+
+DAY 27 & 28: Shell Scripting for Infrastructure Automation
+- Essentials: Variables, conditionals (if-else), loops (for, while), exit codes ($?).
+- Practice: Writing a robust script that auto-checks disk space and sends an alert if usage exceeds 85%.
+
+DAY 29 & 30: Google SRE Interview Simulation & Performance Tuning
+- Scenario 1: CPU spike at 100% - How to isolate the thread causing it (top, pidstat).
+- Scenario 2: Disk I/O Bottleneck - Debugging slow database writes (iostat, iotop).
+- Scenario 3: Review of 5 classic Google SRE infrastructure architectural interview questions.
+
+===================================================================
