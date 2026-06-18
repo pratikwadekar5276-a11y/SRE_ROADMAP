@@ -107,13 +107,55 @@ DAY 4: Crucial Text Filters & Redirections
 - Concept: Standard Input (stdin), Output (stdout), and Error (stderr).
 - Commands: redirection (>, >>, 2>), pipes (|), tee, sort, uniq, wc.
 - Practice: Redirecting application errors to separate files safely.
+File descriptors
+In Linux a file descriptor is an integer that represents an open file. There are three standerd file descriptors
+1 . standerd input file descriptor 0
+2 . standerd output file descriptor 1
+3 . standerd error file descriptor 2
 
+cat data1 data2 > data3 --> data from file data1 and data2 gets redirected in data3 file
+cat data4 >> data3 --> data from file data4 gets appends in data3 file
+cd /root > error.txt 2>&1 --> it redirects both error and output - if we know any command or task might give error then we can use this
 
+'|' - with the help of pipe command we can sepeate 2 commands cmd1 | cmd2 --> ps -ef | grep java
+ls -1 --> shows only file
+wc - word count -> ls -lrt | grep java | wc -l
+sort -> sort data
+uniq --> sort uniq values
+
+how to see 30-37th line of 100 file
+cat file.txt | head -38 | tail -8
+
+tee - Tee reads standerd input and copies it both stdoutput and to a file
+We can see the information going through pipeline
+basically it shows output on terminal as well and copies output in file 
+
+xargs - it comverts standerd input in command line argument
+ls -lrt file1.txt | xargs touch --> output from first command is input for 2nd command
+find . -name "*.log" | xargs rm
 
 DAY 5: Linux Users, Groups & Security Layer
 - Concept: Multi-user architecture. Root user vs Standard user.
 - Commands: useradd, groupadd, usermod, passwd. Understanding /etc/passwd and /etc/shadow.
 - Practice: Creating restricted service users for applications.
+user 
+useradd - create user
+useradd -g group_name -s /bin/bash -c description -m (home directory) -d /home/name name
+userdel - delete the user
+userdel -r - removes data also
+userdel -f - removes users even if user is logged in remotely
+usermod -G group_name user_name - if will keep user as part of existing group and add it to new group
+usermod -g group_name user_name - will add user in new group 
+-m -d - change home directory
+-p change password
+-s change shell tyle
+-L -U lock/unlock user
+
+group - 
+groupadd test - create group
+groupdel test - delete group
+/etc/passwd - this file shows user information
+/etc/shadow - this file contains user password in encrypted format
 
 DAY 6 & 7: File Permissions & Ownership (Deep Dive)
 - Concept: Read, Write, Execute (rwx) in Numeric and Symbolic modes.
