@@ -52,10 +52,28 @@ We can also use else with while loop
 For loops can inerate over a sequence of iterable objects in python. Iterating over a sequence is nothing but iterating over strings lists tuples sets dictionaries
 
 - DAY 8: Loop Control: How and when to use 'break' and 'continue' statements cleanly.
+break
+If you are using loop and you want to get out of loop if particular condition satisfies then you use break statement
+continue
+any loop works in iterations if you want to skip any particular iteration then you can use break statement
+
 - DAY 9: Working with Strings: String concatenation, basic indexing, and essential methods (.lower, .upper).
+In python anything that are enclose in '' or "" consider as string
+A string is basically array of textual data
+String are used when you need to work on unicode characters means single characters not words
+
 - DAY 10: Introduction to Lists: Creating lists, adding items (.append), and removing items.
+List are basically ordered collection of data items
+They store multiple items in single variable
+List are seperated by commas and enclosed within square brackets []
+List are changeable means we can add/remove items from list after creation
+List can consist of multiple data types
+
 - DAY 11: List Indexing & Slicing: Extracting specific elements and chunks from a list safely.
+
 - DAY 12: Dictionaries Basics: Storing data in Key-Value pairs, adding and looking up values.
+
+
 - DAY 13: Sets & Tuples: Understanding immutable sequences and collecting unique items.
 - DAY 14: Week 2 Review & Mini-Project: Building a command-line Calculator or Guessing Game.
 - DAY 15: Introduction to Functions: Defining blocks of code with 'def' and calling them.
