@@ -72,9 +72,31 @@ List can consist of multiple data types
 - DAY 11: List Indexing & Slicing: Extracting specific elements and chunks from a list safely.
 
 - DAY 12: Dictionaries Basics: Storing data in Key-Value pairs, adding and looking up values.
+List are basically ordered collection of data items
+They store multiple items in single variable
+Dictionaries item are stored in key value format and they are sepeated by commas and they are enclosed in {} brackets
 
+if you want to print any value against key
+dict["name"]
+but value is not present against key and we use this format then code will throw error
+then use below syntax
+dict.get("name)
+
+if you want to print value in key value pair format the use dict.items()
 
 - DAY 13: Sets & Tuples: Understanding immutable sequences and collecting unique items.
+Tuples are basically ordered collection of data items
+They store multiple items in single variable
+tuples are seperated by commas and enclosed within square brackets ()
+but the difference between tuple and dictionaries,list is tuple can not change once created
+
+sets are basically unordered collection of data items
+They store multiple items in single variable
+sets are seperated by commas and enclosed within square brackets {}
+you can not change value in set after creation
+sets do not contain duplicate values
+
+
 - DAY 14: Week 2 Review & Mini-Project: Building a command-line Calculator or Guessing Game.
 - DAY 15: Introduction to Functions: Defining blocks of code with 'def' and calling them.
 - DAY 16: Function Arguments & Returns: Passing data into functions and getting results back via 'return'.
