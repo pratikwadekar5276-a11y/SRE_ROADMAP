@@ -98,7 +98,20 @@ sets do not contain duplicate values
 
 
 - DAY 14: Week 2 Review & Mini-Project: Building a command-line Calculator or Guessing Game.
+
+
 - DAY 15: Introduction to Functions: Defining blocks of code with 'def' and calling them.
+function is a block code that performs a specific task whenever its called. 
+In bigger programms we have large amount of code instead writing it again and again its better to create fucntion and call that function whenever we need in programms
+type of functions
+1 - built in function
+2 - user defiend function
+
+def function_name(argument1,argument2):
+      logic
+      return/print
+
+
 - DAY 16: Function Arguments & Returns: Passing data into functions and getting results back via 'return'.
 - DAY 17: Local vs Global Variables: Understanding variable scope (where variables live and die).
 - DAY 18: File Handling Basics (Part 1): How to open, read, and close text files securely.

@@ -161,17 +161,70 @@ DAY 6 & 7: File Permissions & Ownership (Deep Dive)
 - Concept: Read, Write, Execute (rwx) in Numeric and Symbolic modes.
 - Commands: chmod, chown, chgrp, umask (Default permissions).
 - Advanced: Special permissions - SUID, SGID, and Sticky Bit (Why they matter in security).
+Each file permission set can contain four basic representations
+r - read
+w - write
+x- Execute
+- - nothing
+
+you if hit ls -lrt then 7 lines/characters at start apperas
+first line - type (file/directory/socket)
+next 3 lines - user permissions
+next 3 lines - group permissions
+next 3 lines - other permissions
+
+chown 
+change is Ownership of user
+chown -c user file/directory
+chgrp
+change ownership of group
+chgrp -c group file/directory
+umask - 
+to change default permission of file/directory 
+If you create any file/directory bydefault it will have some permissions to change those default permissions umask command is used
+permission = 0777 - 0022 = 0755
 
 DAY 8: Advanced Package Management & Repositories
 - Concept: How Linux manages software packages. Dependencies resolution.
 - Tools: apt, yum/dnf, and Homebrew (on Mac).
 - Practice: Compiling a basic package or utility from source code.
+Package managment means managing packages like install delete update upgraade
+difference between update and upgraade
+update - small package - rollback easy
+upgrade - large package - rollback hard
+yum - RHEL
+rpm - RHEL
+difference between yum and rpm - when to install any package Dependencies comes with that package managed by yum not by rpm
+dnf - centos
+apt - ubuntu
 
 DAY 9 & 10: Finding Files & Pattern Matching
 - Commands: find, locate, which, whereis.
 - Regex: Introduction to Regular Expressions for text matching.
 - Practice: Locating all log files larger than 100MB and moving them to a backup folder.
 
+file and locate both commands are used for file searching
+find . (location) -type f/d (file/directory) -name file_name
+locate file_name
+differnece between find and locate is find command searchs file in filesystem whereas locate command search in locate database if you user locate command amd there will be mlocate.db error then simple login as root user and run updatedb command 
+
+find based on size
+find . -type f -size 50M (50M - exactly 50, +50 greater than 50, -50 less than 50)
+if you want to ignore case sensitivity
+find . -type f iname pratik
+for files created by specific user 
+find . -type f -user pratik
+based on inode number
+find . -type f -inum inode_number
+files based on specific permissions
+find . -type f -perm 775
+starts/ends with particular name
+find . -type f -iname pratik*
+find command to find files are created/modified after particular time
+find . -type f -mtime 7 - DAYS
+find . -type f -mmin 30 - minutes
+
+find . -type f -iname "*.log" -size 100M -exec mv {} backup/ \; 
 
 [PHASE 2: MEMORY, PROCESSES & SIGNALS (DAYS 11 - 20)]
 
