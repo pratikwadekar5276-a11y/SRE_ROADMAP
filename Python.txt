@@ -157,7 +157,53 @@ here a is global varible we can access within or outside function
 b is local varible can access within function only and if you try to override value of global varible in function it will always choose value from function only 
 
 - DAY 18: File Handling Basics (Part 1): How to open, read, and close text files securely.
+File Handling in Python means reading data from files, writing data to files, and modifying file contents stored on disk.
+Before we can perform any operation on file we must first need to open it.
+Python provides the open() function to open file.
+It takes two argumets first name of the file and second is mode of file the file in which you want to perfom any operation
+Closing file is very important in the scenario of append and write becuase it will not write data in that file if you dont close the file
+modes in file handeling
+r - read - opens the file and gives error if file does not exist
+f = open("myfile.txt", "r")
+test = f.read()
+print(test)
+f.close()
+f.read()        # Entire file
+f.readline()   # Single line
+f.readlines()  # All lines as list
+
+w - write - writes - w mode overwrites the existing content and creates a file if not exist
+f = open("myfile.txt", "w")
+f.write("content")
+f.close()
+
+a - append - add content at the end of file
+f = open("myfile.txt", "a")
+f.write("content")
+f.close()
+
+if you use with keyword then you dont need to close the file
+with open("myfile.txt", "a/w") as f
+f.write("content")
+
+
 - DAY 19: File Handling Basics (Part 2): Writing new data and appending logs to existing text files.
+f = open("myfile.txt", "a")
+f.write("logs")
+f.close()
+
+r+ - read plus write
+you you want to print specific lines
+enumerate basically index+1 print as it is passed if passed print 1st content dont need to write index 0
+
+with open("myfile.txt", "r") as f:
+
+    for i, line in enumerate(f, start=1):
+
+        if i in [2, 3, 5]:
+
+            print(line.strip()) 
+
 - DAY 20: Working with Modules: Importing built-in tools like 'math', 'random', and 'time'.
 - DAY 21: Error Handling (Part 1): Using 'try' and 'except' blocks to stop your script from crashing.
 - DAY 22: Error Handling (Part 2): Catching specific errors (ValueError, IndexError) and using 'finally'.

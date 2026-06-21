@@ -331,10 +331,64 @@ system call allows the parent process to pause execution until one of its child 
 When the child terminates, the kernel notifies the parent and provides information such as the child’s exit status. 
 After the parent collects this information through wait(), the kernel can completely remove the child process from the process table.
 
+Process Control block
+Each process represented in operting system by a process controlled block 
+
+PID - unique number assigned by linux kernal for every running process
+PPID (Parent process id) - Its basically process created by parent process 
+when you use ps -ef then first id shown is pid and second one is ppid
+
+when we use ps -ef command following block shows on terminal
+  PID TTY           TIME CMD
+ 3282 ttys000    0:00.02 -zsh
+  783 ttys001    0:00.06 /bin/zsh -l
+
+PID - process IDs
+TTY(Teletype terminal) - terminal type of user logged in to 
+TIME - amount of CPU time in min and sec that process os running
+CMD - name of the command that launched the process
+
+
 DAY 14: Process States & Resource Analysis
 - Concept: Running, Sleeping (Interruptible/Uninterruptible), Stopped, and Zombie states.
 - Internals: Why Zombie processes exist and why they cannot be killed using 'kill'.
 - Practice: Simulating and monitoring process states using 'top' and 'htop'.
+Process - program in execution
+type of process 
+ps -aux
+interactive process - started by user (command line or clicking an app) - top ls ps
+batch process - runs automatically in background usually schedules
+daemom process - background process which runs continosly
+thread - small part of process that shares resources with other
+sleeping - A sleeping process refers to the process state used by the kernel while that waiting occurs.
+Process states
+zombie - A zombie process is a process that has finished execution, but its parent has not yet collected its exit status using wait(). 
+CPU utilization of this process is 0
+orphen process - An orphan process is a process whose parent dies before the child.
+
+Why Zombie processes exist and why they cannot be killed using 'kill'.
+You cannot kill something that has already exited. 
+The only thing left is its record in the kernel’s process table.
+You need to kill parent so zombie process exists
+
+
+
+As a process executes it changes it state
+The state of process is defined in part by the current activity of that process
+
+Each process may be in one of following states
+New - The process being created
+Running - when process begin its execution of instructions the state is running
+Waiting - The process is waiting for some event to occur - like taking input from user
+ready - after the process created and before process is running the middle time the process is assigned to processor then state is ready
+terminated - the process finished the execution
+stopped - A stopped process is a process that is alive but temporarily suspended.
+
+
+new --> ready -->waiting --> running --> terminated
+
+
+
 
 DAY 15: Signals & Inter-Process Communication (IPC)
 - Concept: Kernel alerts - SIGINT (2), SIGTERM (15), SIGKILL (9).
