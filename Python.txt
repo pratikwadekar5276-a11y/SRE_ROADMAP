@@ -111,9 +111,51 @@ def function_name(argument1,argument2):
       logic
       return/print
 
-
 - DAY 16: Function Arguments & Returns: Passing data into functions and getting results back via 'return'.
+There are four type of argument we can provide in function
+Default 
+- if you did not pass any value in function the function will pick those default values
+def add (a=1, b=2)
+      print(a+b)
+add()
+in this scenario no value passed in function so it will pick default values and if any value passed at time of funtion calling then it will override those values
+
+Keyword
+ - we can provide arguments with key value format this way the interpretor recogzines the argument by parameter name
+def add (a=1, b=2)
+      print(a+b)
+add(b=21, a=15)
+
+Variable length
+- 
+
+Required
+- In case we dont pass agrument in key value format then it is neccessary the arguments are passed in correct order and number of argumes should match the number of arguments in actual function
+def add (a, b)
+      print(a+b)
+add(1)
+
+return statement -
+return statement is used to return value of expression back to the calling function
+return does not print any value it basically stores output in memory
+
 - DAY 17: Local vs Global Variables: Understanding variable scope (where variables live and die).
+variable - 
+variable basically stores value in memory 
+local variable -
+variable which defined in the function and the scope of varible is within function
+gloabl variable - 
+the varible defined outside function but its scope is inside function as well as outside function
+a = int(input("Enter a number: "))
+
+def sum ():
+    b = int(input("Enter another number: "))
+    total = a + b
+    print(f"The sum of {a} and {b} is: {total}")# This will raise an error because b is not defined in this scope
+sum()
+here a is global varible we can access within or outside function
+b is local varible can access within function only and if you try to override value of global varible in function it will always choose value from function only 
+
 - DAY 18: File Handling Basics (Part 1): How to open, read, and close text files securely.
 - DAY 19: File Handling Basics (Part 2): Writing new data and appending logs to existing text files.
 - DAY 20: Working with Modules: Importing built-in tools like 'math', 'random', and 'time'.

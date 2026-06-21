@@ -110,7 +110,7 @@ DAY 4: Crucial Text Filters & Redirections
 File descriptors
 In Linux a file descriptor is an integer that represents an open file. There are three standerd file descriptors
 1 . standerd input file descriptor 0
-2 . standerd output file descriptor 1
+2 . standerd output file descriptor 1 when success 1 when fail -1
 3 . standerd error file descriptor 2
 
 cat data1 data2 > data3 --> data from file data1 and data2 gets redirected in data3 file
@@ -231,16 +231,105 @@ find . -type f -iname "*.log" -size 100M -exec mv {} backup/ \;
 DAY 11: Linux Architecture & Memory Spaces
 - Concept: Separation of Powers - User Space vs Kernel Space.
 - Internals: Hardware rings (Ring 0 vs Ring 3), CPU execution modes.
+Why dosent one bad app crash your entire computer??
+The OS creates two distinct protected worlds 
+1 - one for your apps
+2 - one for your Kernal
+
+There are two spaces in linux 
+1 - User space
+Area where application run
+has limited access to hardware
+user mode is unpriviledged
+
+2 - kernal space
+area where OS core executes
+Full access to hardware
+kernal mode is priviledged
+
+Purpose of having these two spaces
+Protection - Prevents user programs from crashing the OS
+Security - stops apps from directly accessing memory devices
+stability - kernal runs isolated, independent of user apps
+
+system call 
+formal request from app to kernal for a service which cannot performed by itself
+user space communicates with kernal space via system calls
+
+user space --> system call --> kernal mode --> hardware access --> user mode
+
+Protection rings in operating system
+Protection rings are hiearchial security mechanism in modern operating system and cpus that defines different privilege levels for executing code
+They prevents user application from directly accessing critical system resources ensuring security stabality and process isolation
+
+levels
+ring 0 (kernal mode)
+Has the highest privileges and full control of hardware and memory
+Executes os kernal functions devices drivers and system services
+can run priviledged instructions lile I/O operatios and memory managment
+
+Ring 1 (priviledged mode)
+used for some os services like device managment
+can access hardware but some restrictions are there compared to ring 0
+
+Ring 2 (semi priviledged mode)
+Handles system utilities and middleware that requires controlled hardware access
+commonly used for networkig proceess and virtual machine monitors
+
+Ring 3 (user mode)
+Has least privileges running user applications
+can not directly access hardware or priviledged instructions
+needs system calls to os services
 
 DAY 12: System Calls (Under the Hood Execution)
 - Concept: How user applications request services from the Kernel.
 - Tools: strace (Linux) / dtruss (macOS).
 - Practice: Tracing the exact system calls (open, read, write) made by 'cat file.txt'.
+user space --> system call --> kernal mode --> hardware access --> user mode
+
+strace - this command is used for tracing different system calls
+you can use strace command directly with the script of you can store output of the script and then you can use strace command to that output
+the begining of the stace output is the syscall list from loading and running the initial execution
+
+strace -e trace = "read" ./script --> shows only print system calls
+strace -e trace = "!read" ./script --> shows all system calls except print system calls
+
+open()
+This systemcall used to provide access to file/resources
+If there is process and it wants to access some file then open() system call sends the requests to kernal to access that particular file
+
+close()
+This is systemcall is used to terminate access to file and used when file is no longer required by process
+
+read()
+read system call is used to access data from the file
+
+write()
+write system call is used to write data from buffer to file
 
 DAY 13: Process Lifecycle & Core Subsystems
 - Concept: How the OS spawns processes using fork(), exec(), and wait().
 - Internals: Process Control Block (PCB), Process IDs (PID, PPID).
 - Practice: Inspecting process trees using 'pstree' and 'ps -ef'.
+
+fork()
+the fork() system call is used to create a seperate duplicate process
+fork system call is used to create child process
+if parent process is busy the we need to create child process which is same as parent process with different id
+fork system call returns 3 values 0 - child process 1 - parent process -1 - failed to initiate child process
+
+exec()
+When exec system call is invoked the program specified in the parameter to exec() will replace the entire process including threads
+Means process is replaced by another process which is in exec() block
+process id will be some but content might be different 
+
+use case suppose we have running process we used fork() system call to create child process then exec() system call can be different for both child and parent process
+We can call differnt program/commands using exec() system call
+
+The wait() 
+system call allows the parent process to pause execution until one of its child processes finishes. 
+When the child terminates, the kernel notifies the parent and provides information such as the child’s exit status. 
+After the parent collects this information through wait(), the kernel can completely remove the child process from the process table.
 
 DAY 14: Process States & Resource Analysis
 - Concept: Running, Sleeping (Interruptible/Uninterruptible), Stopped, and Zombie states.
