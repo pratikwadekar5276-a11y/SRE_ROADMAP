@@ -131,6 +131,7 @@ if all_errors:
         print("-" * 50)
     
     print("\n❌ Result: JSON Validation Failed. Failing the TeamCity build!")
+    sys.stdout.flush()
     sys.exit(1)  # 🔥 क्रिटिकल: हा कोड टीमसिटीला सांगेल की बिल्ड FAIL झाला आहे!
 
 else:
