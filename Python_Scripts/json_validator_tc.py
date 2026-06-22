@@ -8,7 +8,7 @@ tenantcode = sys.argv[2]
 workdir = sys.argv[3]
 filepath1 = f"{workdir}/config/apps/{env}/{tenantcode}"
 filepath2 = f"{workdir}/config/tenants/{env}/{tenantcode}/tenant.json"
-filepath3 = f"{workdir}/portfolios/{env}/portfolios.json"
+filepath3 = f"{workdir}/portfolios/{env}/portfolios"
 
 all_errors = []
 
@@ -120,3 +120,19 @@ if all_errors:
         print("-" * 50)
 else:
     print("All JSON files are valid 🚀")
+
+if all_errors:
+    print(f"\n🛑 Validation Report - Found {len(all_errors)} errors\n")
+    for err in all_errors:
+        print(f"File: {err['file']}")
+        print(f"Error: {err['error']}")
+        print(f"Line: {err['line']}")
+        print(f"Column: {err['column']}")
+        print("-" * 50)
+    
+    print("\n❌ Result: JSON Validation Failed. Failing the TeamCity build!")
+    sys.exit(1)  # 🔥 क्रिटिकल: हा कोड टीमसिटीला सांगेल की बिल्ड FAIL झाला आहे!
+
+else:
+    print("\n🚀 Result: All JSON files are perfectly valid! Exit Code 0.")
+    sys.exit(0)  # सक्सेस! बिल्ड ग्रीन होईल.
