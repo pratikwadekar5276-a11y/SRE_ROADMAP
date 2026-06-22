@@ -115,7 +115,7 @@ import os
 
 # Final Report Generation & TeamCity Build Control Logic
 if all_errors:
-    print(f"\n🛑 Validation Report - Found {len(all_errors)} errors\n")
+    print(f"\Validation Report - Found {len(all_errors)} errors")
     
     # Define table column widths: File, Line, Column, Error Message
     # Increased Column width from 8 to 12 to perfectly hold "End of file" without overflowing
