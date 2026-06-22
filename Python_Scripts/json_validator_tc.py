@@ -111,12 +111,15 @@ validate_json_file(filepath3)
 
 
 # Final Report Generation & TeamCity Build Control Logic
+import os
+
+# Final Report Generation & TeamCity Build Control Logic
 if all_errors:
-    print(f"\nValidation Report - Found {len(all_errors)} errors\n")
+    print(f"\n🛑 Validation Report - Found {len(all_errors)} errors\n")
     
     # Define table column widths: File, Line, Column, Error Message
-    # Using 50 chars for File path and 60 chars for Error text to avoid squeezing data
-    col_widths = [50, 6, 8, 60]
+    # Increased Column width from 8 to 12 to perfectly hold "End of file" without overflowing
+    col_widths = [50, 6, 12, 60]
     row_format = "│ {{:<{}}} │ {{:<{}}} │ {{:<{}}} │ {{:<{}}} │".format(*col_widths)
     
     # Create the horizontal border lines
@@ -131,13 +134,15 @@ if all_errors:
     
     # Print Table Rows
     for err in all_errors:
-        # Truncate file path from the left if it's too long, so the filename remains visible
-        file_path = err['file']
-        if len(file_path) > col_widths[0]:
-            file_path = "..." + file_path[-(col_widths[0] - 3):]
+        # Strip TeamCity's internal working directory to print clean relative paths
+        clean_path = os.path.relpath(err['file'], start=workdir)
+        
+        # Truncate file path from the left only if it still exceeds 50 chars
+        if len(clean_path) > col_widths[0]:
+            clean_path = "..." + clean_path[-(col_widths[0] - 3):]
             
         print(row_format.format(
-            file_path, 
+            clean_path, 
             str(err['line']), 
             str(err['column']), 
             err['error']
@@ -145,10 +150,10 @@ if all_errors:
         
     print(bottom_border)
     
-    print("\n Result: JSON Validation Failed.")
+    print("\n Result: JSON Validation Failed. Failing the TeamCity build!")
     sys.stdout.flush()
     sys.exit(1)
 
 else:
     print("\n Result: All JSON files are perfectly valid! ")
-    sys.exit(0)  # SUCCESS: Build passes clean.
+    sys.exit(0)
