@@ -11,8 +11,8 @@ workdir = sys.argv[3]
 
 # 2. Define absolute paths for validation targets
 filepath1 = f"{workdir}/config/apps/{env}/{tenantcode}"
-filepath2 = f"{workdir}/config/tenants/{env}/{tenantcode}/tenant.json"
-filepath3 = f"{workdir}/portfolios/{env}/portfolios.json"
+filepath2 = f"{workdir}/config/tenants/{env}/{tenantcode}/tenant.conf"
+filepath3 = f"{workdir}/portfolios/{env}/portfolios.conf"
 
 all_errors = []
 
@@ -124,7 +124,7 @@ if all_errors:
     
     # Define table column widths: File, Line, Column, Error Message
     # Column width is configured to 12 to cleanly contain "End of file" without overflowing layout blocks
-    col_widths = [50, 6, 12, 60]
+    col_widths = [50, 6, 12, 65]
     row_format = "│ {{:<{}}} │ {{:<{}}} │ {{:<{}}} │ {{:<{}}} │".format(*col_widths)
     
     # Generate static grid lines for text-based tables
