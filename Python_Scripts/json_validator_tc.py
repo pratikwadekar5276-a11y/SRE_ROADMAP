@@ -15,7 +15,7 @@ all_errors = []
 def validate_json_file(file_path): 
     path = Path(file_path)
     
-    # १. फाईल हँडलिंग आणि सुरक्षा
+    # 1. File Handling and Safety Checks
     if not path.exists():
         all_errors.append({
             "file": str(file_path),
@@ -28,7 +28,7 @@ def validate_json_file(file_path):
     if path.is_dir():
         return
 
-    # २. मल्टिपल एरर्स शोधण्यासाठी कस्टम लाईन-बाय-लाईन चेकर
+    # 2. Custom Line-by-Line Checker to Detect Multiple Errors
     with open(path, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
@@ -38,23 +38,23 @@ def validate_json_file(file_path):
     for line_no, line in enumerate(lines, start=1):
         line_str = line.strip()
         
-        # रिकाम्या लाईन्स सोडून द्या
+        # Skip empty lines
         if not line_str:
             continue
 
-        # चेक १: ब्रॅकेट्स मॅचिंग ट्रॅक करणे (Structural Integrity)
+        # Check 1: Bracket Matching and Structural Integrity Tracking
         open_braces += line_str.count('{') - line_str.count('}')
         open_brackets += line_str.count('[') - line_str.count(']')
 
-        # चेक २: की-व्हॅल्यू जोडीमध्ये कोट्स (Quotes) किंवा कोलन (Colon) सुटलाय का?
+        # Check 2: Missing Quotes or Colons in Key-Value Pairs
         if ":" in line_str:
             parts = line_str.split(":", 1)
             key = parts[0].strip()
             value = parts[1].strip()
             
-            # जर की (Key) ला कोट्स नसतील
+            # If Key lacks double quotes
             if key and not (key.startswith('"') and key.endswith('"')):
-                if not key.startswith('{'):  # ओपनिंग ब्रॅकेट नसेल तरच
+                if not key.startswith('{'):  # Exclude opening braces
                     all_errors.append({
                         "file": str(file_path),
                         "error": f"Invalid Key format (Missing double quotes around key: {key})",
@@ -62,7 +62,7 @@ def validate_json_file(file_path):
                         "column": 1
                     })
             
-            # जर व्हॅल्यू (Value) स्ट्रिंग आहे पण शेवटी कोट्स किंवा कॉमा नाहीये
+            # If Value is a string but misses closing quotes or terminal commas
             if value.startswith('"') and not (value.endswith('"') or value.endswith('",') or value.endswith('"}') or value.endswith('"]')):
                 all_errors.append({
                     "file": str(file_path),
@@ -71,8 +71,8 @@ def validate_json_file(file_path):
                     "column": len(line)
                 })
 
-        # चेक ३: कॉमा (Comma) चा राडा
-        # जर लाईनच्या शेवटी व्हॅल्यू आहे, आणि पुढच्या लाईनवर नवीन की सुरू होतेय, पण इथे कॉमा नाहीये
+        # Check 3: Missing Commas
+        # If the line contains a value, and the next line introduces a new key but this line misses a comma
         if line_no < len(lines):
             next_line_str = lines[line_no].strip()
             if next_line_str and (next_line_str.startswith('"') or next_line_str.startswith('{')):
@@ -84,7 +84,7 @@ def validate_json_file(file_path):
                         "column": len(line)
                     })
 
-    # चेक ४: फाईलच्या शेवटी ब्रॅकेट्स व्यवस्थित बंद झालेत का?
+    # Check 4: Unclosed Braces or Brackets at EOF
     if open_braces != 0:
         all_errors.append({
             "file": str(file_path),
@@ -100,7 +100,7 @@ def validate_json_file(file_path):
             "column": "End of file"
         })
 
-# --- मुख्य एक्झिक्युशन --- 
+# --- Main Execution --- 
 path1 = Path(filepath1)
 if path1.exists() and path1.is_dir():
     for file in path1.iterdir():
@@ -110,8 +110,9 @@ validate_json_file(filepath2)
 validate_json_file(filepath3)
 
 
+# Final Report Generation & TeamCity Build Control Logic
 if all_errors:
-    print(f"\n🛑 Validation Report - Found {len(all_errors)} errors\n")
+    print(f"\nValidation Report - Found {len(all_errors)} errors\n")
     for err in all_errors:
         print(f"File: {err['file']}")
         print(f"Error: {err['error']}")
@@ -119,10 +120,10 @@ if all_errors:
         print(f"Column: {err['column']}")
         print("-" * 50)
     
-    print("\n❌ Result: JSON Validation Failed. Failing the TeamCity build!")
+    print("\n Result: JSON Validation Failed. Failing the TeamCity build!")
     sys.stdout.flush()
-    sys.exit(1)  # 🔥 क्रिटिकल: हा कोड टीमसिटीला सांगेल की बिल्ड FAIL झाला आहे!
+    sys.exit(1)  # CRITICAL: Forces TeamCity to fail the build step on validation failure!
 
 else:
-    print("\n🚀 Result: All JSON files are perfectly valid! Exit Code 0.")
-    sys.exit(0)  # सक्सेस! बिल्ड ग्रीन होईल.
+    print("\n Result: All JSON files are perfectly valid! Exit Code 0.")
+    sys.exit(0)  # SUCCESS: Build passes clean.
