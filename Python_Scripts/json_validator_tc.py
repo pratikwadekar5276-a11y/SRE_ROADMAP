@@ -8,7 +8,7 @@ tenantcode = sys.argv[2]
 workdir = sys.argv[3]
 filepath1 = f"{workdir}/config/apps/{env}/{tenantcode}"
 filepath2 = f"{workdir}/config/tenants/{env}/{tenantcode}/tenant.json"
-filepath3 = f"{workdir}/portfolios/{env}/portfolios"
+filepath3 = f"{workdir}/portfolios/{env}/portfolios.json"
 
 all_errors = []
 
