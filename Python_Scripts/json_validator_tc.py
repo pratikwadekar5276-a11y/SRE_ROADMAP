@@ -116,12 +116,10 @@ validate_json_file(filepath3)
 
 # 5. Final Report Generation & TeamCity Build Control Logic
 if all_errors:
-    # ANSI Escape Codes for colored terminal output (\033[92m = Bright Green, \033[0m = Reset Color)
-    GREEN_COLOR = "\033[92m"
-    RESET_COLOR = "\033[0m"
+ 
     
-    # Print the primary header statement in green color
-    print(f"\n{GREEN_COLOR}🛑 Validation Report - Found {len(all_errors)} errors{RESET_COLOR}\n")
+    # Print the primary header statement
+    print(f"Validation Report - Found {len(all_errors)} errors{RESET_COLOR}\n")
     
     # Define table column widths: File, Line, Column, Error Message
     # Column width is configured to 12 to cleanly contain "End of file" without overflowing layout blocks
