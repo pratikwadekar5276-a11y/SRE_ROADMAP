@@ -113,17 +113,42 @@ validate_json_file(filepath3)
 # Final Report Generation & TeamCity Build Control Logic
 if all_errors:
     print(f"\nValidation Report - Found {len(all_errors)} errors\n")
-    for err in all_errors:
-        print(f"File: {err['file']}")
-        print(f"Error: {err['error']}")
-        print(f"Line: {err['line']}")
-        print(f"Column: {err['column']}")
-        print("-" * 50)
     
-    print("\n Result: JSON Validation Failed. Failing the TeamCity build!")
+    # Define table column widths: File, Line, Column, Error Message
+    # Using 50 chars for File path and 60 chars for Error text to avoid squeezing data
+    col_widths = [50, 6, 8, 60]
+    row_format = "│ {{:<{}}} │ {{:<{}}} │ {{:<{}}} │ {{:<{}}} │".format(*col_widths)
+    
+    # Create the horizontal border lines
+    top_border    = "┌─" + "─" * col_widths[0] + "─┬─" + "─" * col_widths[1] + "─┬─" + "─" * col_widths[2] + "─┬─" + "─" * col_widths[3] + "─┐"
+    header_border = "├─" + "─" * col_widths[0] + "─┼─" + "─" * col_widths[1] + "─┼─" + "─" * col_widths[2] + "─┼─" + "─" * col_widths[3] + "─┤"
+    bottom_border = "└─" + "─" * col_widths[0] + "─┴─" + "─" * col_widths[1] + "─┴─" + "─" * col_widths[2] + "─┴─" + "─" * col_widths[3] + "─┘"
+    
+    # Print Table Header
+    print(top_border)
+    print(row_format.format("File Path", "Line", "Column", "Error Description"))
+    print(header_border)
+    
+    # Print Table Rows
+    for err in all_errors:
+        # Truncate file path from the left if it's too long, so the filename remains visible
+        file_path = err['file']
+        if len(file_path) > col_widths[0]:
+            file_path = "..." + file_path[-(col_widths[0] - 3):]
+            
+        print(row_format.format(
+            file_path, 
+            str(err['line']), 
+            str(err['column']), 
+            err['error']
+        ))
+        
+    print(bottom_border)
+    
+    print("\n Result: JSON Validation Failed.")
     sys.stdout.flush()
-    sys.exit(1)  # CRITICAL: Forces TeamCity to fail the build step on validation failure!
+    sys.exit(1)
 
 else:
-    print("\n Result: All JSON files are perfectly valid! Exit Code 0.")
+    print("\n Result: All JSON files are perfectly valid! ")
     sys.exit(0)  # SUCCESS: Build passes clean.
