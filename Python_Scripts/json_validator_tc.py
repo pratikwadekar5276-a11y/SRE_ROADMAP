@@ -1,11 +1,15 @@
+import os
 import json
 import sys
 from pathlib import Path
 
 
+
 env = sys.argv[1]
 tenantcode = sys.argv[2]
 workdir = sys.argv[3]
+
+# 2. Define absolute paths for validation targets
 filepath1 = f"{workdir}/config/apps/{env}/{tenantcode}"
 filepath2 = f"{workdir}/config/tenants/{env}/{tenantcode}/tenant.json"
 filepath3 = f"{workdir}/portfolios/{env}/portfolios.json"
@@ -15,7 +19,7 @@ all_errors = []
 def validate_json_file(file_path): 
     path = Path(file_path)
     
-    # 1. File Handling and Safety Checks
+    # 3. File Handling and Safety Checks
     if not path.exists():
         all_errors.append({
             "file": str(file_path),
@@ -28,7 +32,7 @@ def validate_json_file(file_path):
     if path.is_dir():
         return
 
-    # 2. Custom Line-by-Line Checker to Detect Multiple Errors
+    # 4. Custom Line-by-Line Checker to Detect Multiple Errors
     with open(path, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
@@ -62,11 +66,11 @@ def validate_json_file(file_path):
                         "column": 1
                     })
             
-            # If Value is a string but misses closing quotes or terminal commas
+            # If Value is a string but misses closing quotes or terminal delimiters
             if value.startswith('"') and not (value.endswith('"') or value.endswith('",') or value.endswith('"}') or value.endswith('"]')):
                 all_errors.append({
                     "file": str(file_path),
-                    "error": f"Unterminated string constant or invalid delimiter in value",
+                    "error": "Unterminated string constant or invalid delimiter in value",
                     "line": line_no,
                     "column": len(line)
                 })
@@ -110,19 +114,21 @@ validate_json_file(filepath2)
 validate_json_file(filepath3)
 
 
-# Final Report Generation & TeamCity Build Control Logic
-import os
-
-# Final Report Generation & TeamCity Build Control Logic
+# 5. Final Report Generation & TeamCity Build Control Logic
 if all_errors:
-    print(f"\Validation Report - Found {len(all_errors)} errors")
+    # ANSI Escape Codes for colored terminal output (\033[92m = Bright Green, \033[0m = Reset Color)
+    GREEN_COLOR = "\033[92m"
+    RESET_COLOR = "\033[0m"
+    
+    # Print the primary header statement in green color
+    print(f"\n{GREEN_COLOR}🛑 Validation Report - Found {len(all_errors)} errors{RESET_COLOR}\n")
     
     # Define table column widths: File, Line, Column, Error Message
-    # Increased Column width from 8 to 12 to perfectly hold "End of file" without overflowing
+    # Column width is configured to 12 to cleanly contain "End of file" without overflowing layout blocks
     col_widths = [50, 6, 12, 60]
     row_format = "│ {{:<{}}} │ {{:<{}}} │ {{:<{}}} │ {{:<{}}} │".format(*col_widths)
     
-    # Create the horizontal border lines
+    # Generate static grid lines for text-based tables
     top_border    = "┌─" + "─" * col_widths[0] + "─┬─" + "─" * col_widths[1] + "─┬─" + "─" * col_widths[2] + "─┬─" + "─" * col_widths[3] + "─┐"
     header_border = "├─" + "─" * col_widths[0] + "─┼─" + "─" * col_widths[1] + "─┼─" + "─" * col_widths[2] + "─┼─" + "─" * col_widths[3] + "─┤"
     bottom_border = "└─" + "─" * col_widths[0] + "─┴─" + "─" * col_widths[1] + "─┴─" + "─" * col_widths[2] + "─┴─" + "─" * col_widths[3] + "─┘"
@@ -132,12 +138,12 @@ if all_errors:
     print(row_format.format("File Path", "Line", "Column", "Error Description"))
     print(header_border)
     
-    # Print Table Rows
+    # Print Table Rows dynamically
     for err in all_errors:
-        # Strip TeamCity's internal working directory to print clean relative paths
+        # Strip TeamCity's local agent path prefix to compute a clean repository path
         clean_path = os.path.relpath(err['file'], start=workdir)
         
-        # Truncate file path from the left only if it still exceeds 50 chars
+        # Truncate clean file path from the left only if it exceeds 50 characters
         if len(clean_path) > col_widths[0]:
             clean_path = "..." + clean_path[-(col_widths[0] - 3):]
             
@@ -152,8 +158,8 @@ if all_errors:
     
     print("\n Result: JSON Validation Failed. Failing the TeamCity build!")
     sys.stdout.flush()
-    sys.exit(1)
+    sys.exit(1)  # Signal exit code 1 to explicitly fail the execution pipeline step
 
 else:
     print("\n Result: All JSON files are perfectly valid! ")
-    sys.exit(0)
+    sys.exit(0)  # Signal exit code 0 for a successful step completion
