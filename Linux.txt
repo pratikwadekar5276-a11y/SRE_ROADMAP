@@ -387,8 +387,58 @@ stopped - A stopped process is a process that is alive but temporarily suspended
 
 new --> ready -->waiting --> running --> terminated
 
+top (table of process)
+command shows a real-time view of running process in Linux and displays kernal managed tasks
+the command also provides a system information summary that shows resource utilization including cpu and memory usage
 
+PID   COMMAND      %CPU TIME     #TH    #WQ  #PORT MEM    PURG   CMPRS  PGRP PPID STATE    BOOSTS         %CPU_ME
+170   WindowServer 7.0  02:51.59 23     6    2545  448M-  80M+   0B     170  1    sleeping *0[1]          0
 
+table in top command is gets updated in every 3 seconds
+htop - top is a basic command-line tool for monitoring system processes, while htop is an enhanced interactive version that provides easier navigation, visualization, and process management.
+
+This is about understanding process/thread memory and CPU usage using top, which is very important for SRE troubleshooting.
+when you use top command the screen get updated every 3 second
+
+child process - the process created by another process
+zombie process - A zombie process is a process that has finished execution (it is dead) but still has an entry in the Linux process table because its parent process has not collected its exit status yet.
+
+top command will show
+uptime of system load avarage
+tasks  total running sleeping stopped zombie
+%cpu userspace systemspace niceness(priority) id(ideal - higher the % less busy cpu is)   wi (waiting - higher the % worse for server) hi(hardware interupt) si(software interupt) st
+MiB mem - totalmem free used cache
+MiB swap - total free used avail mem
+
+MiB Mem (Physical Memory): This represents your actual, physical RAM (Random Access Memory) hardware installed on the server.
+MiB Swap (Virtual Memory): This is a designated space on your Hard Drive or SSD (either a dedicated swap partition or a swap file) that the Linux kernel uses as an extension of your RAM.
+
+The Scenario: Imagine a sudden traffic spike hits your application, or a developer writes a piece of code that causes a temporary memory leak.
+
+Without Swap: The moment your RAM hits 100%, the Linux kernel has no choice but to trigger the OOM (Out Of Memory) Killer. It will immediately terminate your primary process (like your Docker container, Java app, or Database) to keep the operating system alive. Your application goes down completely.
+
+With Swap: Swap acts as an overflow cushion. The system slows down because it's using the disk, but it stays alive. It gives your autoscaling policies time to kick in, or gives you (the SRE) time to log in, investigate, and fix the issue before a total outage occurs.
+
+the Swap space rarely consumes more than 1% to 3% of the total SSD storage.
+
+htop -
+you can install htop with package manager
+
+you can use f2 to customize your htop
+
+top is the universal, built-in text-only utility that works on every server by default, while htop is its modern, color-coded, interactive upgrade that supports mouse clicks, scrolling, and easy process filtering.
+
+we can use uptime command to see load avagrge
+it will show how long you server has been up and 
+load avarage : 0.07, 0.05, 0.01
+
+first number (0.07) - defines load past 1 minute
+second number (0.05) - defines load past 5 minute
+third number (0.01) - defines load past 15 minute
+
+lscpu - commands to see how many cpu are there for server
+also you can htop
+cat /proc/cpuinfo
 
 DAY 15: Signals & Inter-Process Communication (IPC)
 - Concept: Kernel alerts - SIGINT (2), SIGTERM (15), SIGKILL (9).

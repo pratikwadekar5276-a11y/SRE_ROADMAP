@@ -1,1 +1,4 @@
 teamcity - localhost:8111
+colima status
+colima start
+docker start teamcity-agent teamcity-server
