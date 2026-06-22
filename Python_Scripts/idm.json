@@ -1,0 +1,10 @@
+{
+    "accesstokensignaturesecret": "X7mP9qL2vN8rK5tY1zW4cD6hJ3sF0aQ",
+    "formcookie": "FORM_COOKIE_8f3d2c1b7a9e",
+    "sessioncookie": "SESSION_COOKIE_b4e9d8f7c6a5",
+    "idmurl": "https://idm.example.com/auth/api/v2",
+    "cookieencryptionbase64": "Q29va2llRW5jcnlwdGlvbktleTEyMzQ1Njc4OTA=",
+    "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy.payload.signature",
+    "serviceaccount": "svc-json-validator_1",
+    "serviceaccountpassword": "P@ssw0rd!2025#Test_1"
+}

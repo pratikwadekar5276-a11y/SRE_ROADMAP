@@ -1,0 +1,500 @@
+Linux and Linux Internals
+
+===================================================================
+          COMPLETE LINUX & LINUX INTERNALS - 30 DAYS MASTER PLAN
+          Time: 07:15 AM to 08:15 AM | Focus: Basic to Google Level SRE
+===================================================================
+
+[PHASE 1: THE FOUNDATION & CORE COMMANDS (DAYS 1 - 10)]
+
+DAY 1: Introduction to UNIX/Linux & macOS Terminal
+- Architecture: Monolithic vs Microkernel. How macOS (Darwin/BSD) relates to Linux.
+- Practice: Terminal navigation, understanding the Shell (Zsh/Bash), 'man' pages.
+
+Linux is open source operating system based on Linux
+It is primerily known for its security and flexibility
+
+Difference between linux and UNIX
+Unix is licensed and linux is opensource
+Linux is inspired by unix and is designed to be unix like.
+It follows many of the same principles and standerds making it compatible with unix software and Commands
+
+Linux is not an operating system
+Linux is opensource kernal
+Kernal is core part of the operating system, managing system resources and communication between hardware and software
+
+Linux Distributions
+An operating system made from a software collection
+which includeds the linux kernal and often a package managment system
+eg ubuntu RHEL centos
+Linux distribut  = Linux Kernal + Package Managment 
+
+Linux Key Features
+Open Source - Source code is freely available and can be modified
+Multiuser - multiple user can be access system resources simultaneously
+Multitasking - Can run multiple tasks simultaneously
+Security - Strong security features and regular updates
+Portability - can run on various platforms
+
+
+DAY 2: The Linux Directory Structure (FHS)
+- Concept: Why Linux follows the Filesystem Hierarchy Standard.
+- Internals: Deep dive into /etc (configs), /var (logs), /boot, and /opt.
+- Practice: Navigating and identifying system configuration entry points.
+
+Linux follows the Filesystem Hierarchy Standard to ensure predictability, software compatibility, and easy administration across different distributions by keeping file locations uniform.
+
+pwd - present working directory
+/ - root directory
+
+OS store and manage data on disk or partitions using a structure called Filesystem
+File system includes files, directories and its related permissions
+
+types of Filesystem
+ext3 extended3
+ext4 extended4
+XFS extends file system
+
+XFS - optimized for large files and volumes, offering superior performance and scalability
+ext4 - Performs well accroess various file sizes but less efficient with extremly large files
+
+To check filesystem on Linux
+lsblk -f 
+df -Th
+cat /etc/fstab
+
+Inode
+Inode in linux is a data strucuture that stores metadata about file or Directory
+THe file system uses the inode number to locate the inode which then contains pointers to data blocks where actual file data is stored
+ls -li
+
+/ - root directory
+/bin - user binaries such as common Commands
+/sbin - contains system Commands
+/etc - contains configuration
+/home - home directory for users
+/var - variable data such as logs
+/tmp - temp files created by system and users
+/boot - holds files that needed for system to boot up
+/dev - device files
+/lib, /lib64 - contains shared libraries and kernal modules which are needed to boot the system and run commands in root filesystem
+/opt - contains software packages that are not part of default packages
+/usr - contains user binaries, libraries, documentation, and source code for all secondary software
+
+
+
+DAY 3: File & Directory Operations (The SRE Essentials)
+- Commands: mkdir, rm, cp, mv, touch, cat, less, head, tail.
+- Practice: Efficient navigation shortcuts, reading logs in real-time using 'tail -f'.
+
+mkdir - create new directory
+rm - remove file
+rm -r - remove directory. r --> recursive
+cp - copy file
+cp -r - copy directory 
+touch - create an empty file
+cat - view file
+less - use to view large file
+more - use to view medium range file
+head - show first 10 records from file
+head -n - shows first n records from file 
+tail - shows last 10 records from file 
+tail -n - shows last n number of records
+tail -f - follows output/ shows live logs
+
+
+DAY 4: Crucial Text Filters & Redirections
+- Concept: Standard Input (stdin), Output (stdout), and Error (stderr).
+- Commands: redirection (>, >>, 2>), pipes (|), tee, sort, uniq, wc.
+- Practice: Redirecting application errors to separate files safely.
+File descriptors
+In Linux a file descriptor is an integer that represents an open file. There are three standerd file descriptors
+1 . standerd input file descriptor 0
+2 . standerd output file descriptor 1 when success 1 when fail -1
+3 . standerd error file descriptor 2
+
+cat data1 data2 > data3 --> data from file data1 and data2 gets redirected in data3 file
+cat data4 >> data3 --> data from file data4 gets appends in data3 file
+cd /root > error.txt 2>&1 --> it redirects both error and output - if we know any command or task might give error then we can use this
+
+'|' - with the help of pipe command we can sepeate 2 commands cmd1 | cmd2 --> ps -ef | grep java
+ls -1 --> shows only file
+wc - word count -> ls -lrt | grep java | wc -l
+sort -> sort data
+uniq --> sort uniq values
+
+how to see 30-37th line of 100 file
+cat file.txt | head -38 | tail -8
+
+tee - Tee reads standerd input and copies it both stdoutput and to a file
+We can see the information going through pipeline
+basically it shows output on terminal as well and copies output in file 
+
+xargs - it comverts standerd input in command line argument
+ls -lrt file1.txt | xargs touch --> output from first command is input for 2nd command
+find . -name "*.log" | xargs rm
+
+DAY 5: Linux Users, Groups & Security Layer
+- Concept: Multi-user architecture. Root user vs Standard user.
+- Commands: useradd, groupadd, usermod, passwd. Understanding /etc/passwd and /etc/shadow.
+- Practice: Creating restricted service users for applications.
+user 
+useradd - create user
+useradd -g group_name -s /bin/bash -c description -m (home directory) -d /home/name name
+userdel - delete the user
+userdel -r - removes data also
+userdel -f - removes users even if user is logged in remotely
+usermod -G group_name user_name - if will keep user as part of existing group and add it to new group
+usermod -g group_name user_name - will add user in new group 
+-m -d - change home directory
+-p change password
+-s change shell tyle
+-L -U lock/unlock user
+
+group - 
+groupadd test - create group
+groupdel test - delete group
+/etc/passwd - this file shows user information
+/etc/shadow - this file contains user password in encrypted format
+
+DAY 6 & 7: File Permissions & Ownership (Deep Dive)
+- Concept: Read, Write, Execute (rwx) in Numeric and Symbolic modes.
+- Commands: chmod, chown, chgrp, umask (Default permissions).
+- Advanced: Special permissions - SUID, SGID, and Sticky Bit (Why they matter in security).
+Each file permission set can contain four basic representations
+r - read
+w - write
+x- Execute
+- - nothing
+
+you if hit ls -lrt then 7 lines/characters at start apperas
+first line - type (file/directory/socket)
+next 3 lines - user permissions
+next 3 lines - group permissions
+next 3 lines - other permissions
+
+chown 
+change is Ownership of user
+chown -c user file/directory
+chgrp
+change ownership of group
+chgrp -c group file/directory
+umask - 
+to change default permission of file/directory 
+If you create any file/directory bydefault it will have some permissions to change those default permissions umask command is used
+permission = 0777 - 0022 = 0755
+
+DAY 8: Advanced Package Management & Repositories
+- Concept: How Linux manages software packages. Dependencies resolution.
+- Tools: apt, yum/dnf, and Homebrew (on Mac).
+- Practice: Compiling a basic package or utility from source code.
+Package managment means managing packages like install delete update upgraade
+difference between update and upgraade
+update - small package - rollback easy
+upgrade - large package - rollback hard
+yum - RHEL
+rpm - RHEL
+difference between yum and rpm - when to install any package Dependencies comes with that package managed by yum not by rpm
+dnf - centos
+apt - ubuntu
+
+DAY 9 & 10: Finding Files & Pattern Matching
+- Commands: find, locate, which, whereis.
+- Regex: Introduction to Regular Expressions for text matching.
+- Practice: Locating all log files larger than 100MB and moving them to a backup folder.
+
+file and locate both commands are used for file searching
+find . (location) -type f/d (file/directory) -name file_name
+locate file_name
+differnece between find and locate is find command searchs file in filesystem whereas locate command search in locate database if you user locate command amd there will be mlocate.db error then simple login as root user and run updatedb command 
+
+find based on size
+find . -type f -size 50M (50M - exactly 50, +50 greater than 50, -50 less than 50)
+if you want to ignore case sensitivity
+find . -type f iname pratik
+for files created by specific user 
+find . -type f -user pratik
+based on inode number
+find . -type f -inum inode_number
+files based on specific permissions
+find . -type f -perm 775
+starts/ends with particular name
+find . -type f -iname pratik*
+find command to find files are created/modified after particular time
+find . -type f -mtime 7 - DAYS
+find . -type f -mmin 30 - minutes
+
+find . -type f -iname "*.log" -size 100M -exec mv {} backup/ \; 
+
+[PHASE 2: MEMORY, PROCESSES & SIGNALS (DAYS 11 - 20)]
+
+DAY 11: Linux Architecture & Memory Spaces
+- Concept: Separation of Powers - User Space vs Kernel Space.
+- Internals: Hardware rings (Ring 0 vs Ring 3), CPU execution modes.
+Why dosent one bad app crash your entire computer??
+The OS creates two distinct protected worlds 
+1 - one for your apps
+2 - one for your Kernal
+
+There are two spaces in linux 
+1 - User space
+Area where application run
+has limited access to hardware
+user mode is unpriviledged
+
+2 - kernal space
+area where OS core executes
+Full access to hardware
+kernal mode is priviledged
+
+Purpose of having these two spaces
+Protection - Prevents user programs from crashing the OS
+Security - stops apps from directly accessing memory devices
+stability - kernal runs isolated, independent of user apps
+
+system call 
+formal request from app to kernal for a service which cannot performed by itself
+user space communicates with kernal space via system calls
+
+user space --> system call --> kernal mode --> hardware access --> user mode
+
+Protection rings in operating system
+Protection rings are hiearchial security mechanism in modern operating system and cpus that defines different privilege levels for executing code
+They prevents user application from directly accessing critical system resources ensuring security stabality and process isolation
+
+levels
+ring 0 (kernal mode)
+Has the highest privileges and full control of hardware and memory
+Executes os kernal functions devices drivers and system services
+can run priviledged instructions lile I/O operatios and memory managment
+
+Ring 1 (priviledged mode)
+used for some os services like device managment
+can access hardware but some restrictions are there compared to ring 0
+
+Ring 2 (semi priviledged mode)
+Handles system utilities and middleware that requires controlled hardware access
+commonly used for networkig proceess and virtual machine monitors
+
+Ring 3 (user mode)
+Has least privileges running user applications
+can not directly access hardware or priviledged instructions
+needs system calls to os services
+
+DAY 12: System Calls (Under the Hood Execution)
+- Concept: How user applications request services from the Kernel.
+- Tools: strace (Linux) / dtruss (macOS).
+- Practice: Tracing the exact system calls (open, read, write) made by 'cat file.txt'.
+user space --> system call --> kernal mode --> hardware access --> user mode
+
+strace - this command is used for tracing different system calls
+you can use strace command directly with the script of you can store output of the script and then you can use strace command to that output
+the begining of the stace output is the syscall list from loading and running the initial execution
+
+strace -e trace = "read" ./script --> shows only print system calls
+strace -e trace = "!read" ./script --> shows all system calls except print system calls
+
+open()
+This systemcall used to provide access to file/resources
+If there is process and it wants to access some file then open() system call sends the requests to kernal to access that particular file
+
+close()
+This is systemcall is used to terminate access to file and used when file is no longer required by process
+
+read()
+read system call is used to access data from the file
+
+write()
+write system call is used to write data from buffer to file
+
+DAY 13: Process Lifecycle & Core Subsystems
+- Concept: How the OS spawns processes using fork(), exec(), and wait().
+- Internals: Process Control Block (PCB), Process IDs (PID, PPID).
+- Practice: Inspecting process trees using 'pstree' and 'ps -ef'.
+
+fork()
+the fork() system call is used to create a seperate duplicate process
+fork system call is used to create child process
+if parent process is busy the we need to create child process which is same as parent process with different id
+fork system call returns 3 values 0 - child process 1 - parent process -1 - failed to initiate child process
+
+exec()
+When exec system call is invoked the program specified in the parameter to exec() will replace the entire process including threads
+Means process is replaced by another process which is in exec() block
+process id will be some but content might be different 
+
+use case suppose we have running process we used fork() system call to create child process then exec() system call can be different for both child and parent process
+We can call differnt program/commands using exec() system call
+
+The wait() 
+system call allows the parent process to pause execution until one of its child processes finishes. 
+When the child terminates, the kernel notifies the parent and provides information such as the child’s exit status. 
+After the parent collects this information through wait(), the kernel can completely remove the child process from the process table.
+
+Process Control block
+Each process represented in operting system by a process controlled block 
+
+PID - unique number assigned by linux kernal for every running process
+PPID (Parent process id) - Its basically process created by parent process 
+when you use ps -ef then first id shown is pid and second one is ppid
+
+when we use ps -ef command following block shows on terminal
+  PID TTY           TIME CMD
+ 3282 ttys000    0:00.02 -zsh
+  783 ttys001    0:00.06 /bin/zsh -l
+
+PID - process IDs
+TTY(Teletype terminal) - terminal type of user logged in to 
+TIME - amount of CPU time in min and sec that process os running
+CMD - name of the command that launched the process
+
+
+DAY 14: Process States & Resource Analysis
+- Concept: Running, Sleeping (Interruptible/Uninterruptible), Stopped, and Zombie states.
+- Internals: Why Zombie processes exist and why they cannot be killed using 'kill'.
+- Practice: Simulating and monitoring process states using 'top' and 'htop'.
+Process - program in execution
+type of process 
+ps -aux
+interactive process - started by user (command line or clicking an app) - top ls ps
+batch process - runs automatically in background usually schedules
+daemom process - background process which runs continosly
+thread - small part of process that shares resources with other
+sleeping - A sleeping process refers to the process state used by the kernel while that waiting occurs.
+Process states
+zombie - A zombie process is a process that has finished execution, but its parent has not yet collected its exit status using wait(). 
+CPU utilization of this process is 0
+orphen process - An orphan process is a process whose parent dies before the child.
+
+Why Zombie processes exist and why they cannot be killed using 'kill'.
+You cannot kill something that has already exited. 
+The only thing left is its record in the kernel’s process table.
+You need to kill parent so zombie process exists
+
+
+
+As a process executes it changes it state
+The state of process is defined in part by the current activity of that process
+
+Each process may be in one of following states
+New - The process being created
+Running - when process begin its execution of instructions the state is running
+Waiting - The process is waiting for some event to occur - like taking input from user
+ready - after the process created and before process is running the middle time the process is assigned to processor then state is ready
+terminated - the process finished the execution
+stopped - A stopped process is a process that is alive but temporarily suspended.
+
+
+new --> ready -->waiting --> running --> terminated
+
+top (table of process)
+command shows a real-time view of running process in Linux and displays kernal managed tasks
+the command also provides a system information summary that shows resource utilization including cpu and memory usage
+
+PID   COMMAND      %CPU TIME     #TH    #WQ  #PORT MEM    PURG   CMPRS  PGRP PPID STATE    BOOSTS         %CPU_ME
+170   WindowServer 7.0  02:51.59 23     6    2545  448M-  80M+   0B     170  1    sleeping *0[1]          0
+
+table in top command is gets updated in every 3 seconds
+htop - top is a basic command-line tool for monitoring system processes, while htop is an enhanced interactive version that provides easier navigation, visualization, and process management.
+
+This is about understanding process/thread memory and CPU usage using top, which is very important for SRE troubleshooting.
+when you use top command the screen get updated every 3 second
+
+child process - the process created by another process
+zombie process - A zombie process is a process that has finished execution (it is dead) but still has an entry in the Linux process table because its parent process has not collected its exit status yet.
+
+top command will show
+uptime of system load avarage
+tasks  total running sleeping stopped zombie
+%cpu userspace systemspace niceness(priority) id(ideal - higher the % less busy cpu is)   wi (waiting - higher the % worse for server) hi(hardware interupt) si(software interupt) st
+MiB mem - totalmem free used cache
+MiB swap - total free used avail mem
+
+MiB Mem (Physical Memory): This represents your actual, physical RAM (Random Access Memory) hardware installed on the server.
+MiB Swap (Virtual Memory): This is a designated space on your Hard Drive or SSD (either a dedicated swap partition or a swap file) that the Linux kernel uses as an extension of your RAM.
+
+The Scenario: Imagine a sudden traffic spike hits your application, or a developer writes a piece of code that causes a temporary memory leak.
+
+Without Swap: The moment your RAM hits 100%, the Linux kernel has no choice but to trigger the OOM (Out Of Memory) Killer. It will immediately terminate your primary process (like your Docker container, Java app, or Database) to keep the operating system alive. Your application goes down completely.
+
+With Swap: Swap acts as an overflow cushion. The system slows down because it's using the disk, but it stays alive. It gives your autoscaling policies time to kick in, or gives you (the SRE) time to log in, investigate, and fix the issue before a total outage occurs.
+
+the Swap space rarely consumes more than 1% to 3% of the total SSD storage.
+
+htop -
+you can install htop with package manager
+
+you can use f2 to customize your htop
+
+top is the universal, built-in text-only utility that works on every server by default, while htop is its modern, color-coded, interactive upgrade that supports mouse clicks, scrolling, and easy process filtering.
+
+we can use uptime command to see load avagrge
+it will show how long you server has been up and 
+load avarage : 0.07, 0.05, 0.01
+
+first number (0.07) - defines load past 1 minute
+second number (0.05) - defines load past 5 minute
+third number (0.01) - defines load past 15 minute
+
+lscpu - commands to see how many cpu are there for server
+also you can htop
+cat /proc/cpuinfo
+
+DAY 15: Signals & Inter-Process Communication (IPC)
+- Concept: Kernel alerts - SIGINT (2), SIGTERM (15), SIGKILL (9).
+- Internals: Architectural difference between SIGTERM (graceful shutdown) and SIGKILL (hard drop).
+- Practice: Managing background jobs using bg, fg, jobs, and nohup.
+
+DAY 16 & 17: Virtual File System (VFS) & Inodes
+- Concept: VFS abstraction layer. Inode structure (Metadata vs Data blocks).
+- Internals: Why deleting a large file doesn't free up space if a process keeps the File Descriptor open.
+- Practice: Debugging unreleased file handlers using 'lsof'. Hard links vs Soft links.
+
+DAY 18: Memory Management & Virtual RAM
+- Concept: Physical RAM vs Virtual Memory. Paging mechanics and Swap space.
+- Internals: Page Faults (Minor vs Major). Thrashing and its impact on CPU wait times.
+- Practice: Monitoring page caching and swap transitions using 'vmstat'.
+
+DAY 19: Out of Memory (OOM) Killer Mechanics
+- Concept: What happens when the system runs out of physical memory and swap.
+- Internals: How the Kernel evaluates and assigns the 'oom_score' to terminate heavy processes.
+- Practice: Investigating system crashes and process terminations via 'dmesg | grep -i oom'.
+
+DAY 20: Storage Internals & File Systems
+- Concept: Block devices, Partition tables (GPT/MBR), File System Types (ext4, XFS).
+- Practice: Mounting disks, checking disk space availability via 'df -h' and directory sizes via 'du -sh'.
+
+
+[PHASE 3: NETWORKING, AUTOMATION & GOOGLE SRE LEVEL PREP (DAYS 21 - 30)]
+
+DAY 21: Linux Networking Stack
+- Concept: Network sockets, TCP/IP stack implementation inside the Kernel.
+- Practice: Debugging port bindings and tracking live connections using 'ss', 'netstat', and 'lsof -i'.
+
+DAY 22: Network Troubleshooting & Routing
+- Commands: ping, traceroute, dig, nslookup, ip route, ifconfig/ip addr.
+- Practice: Simulating network drops and verifying DNS resolution paths.
+
+DAY 23 & 24: The SRE Power Tools (Log Parsing Mastery)
+- Concept: High-velocity log analysis without UI tools.
+- Tools: Deep dive into grep (ripgrep), sed (stream editor), and awk (pattern scanning language).
+- Practice: Writing one-liner awk scripts to parse 1GB application logs and extract unique error IPs under 5 seconds.
+
+DAY 25: Systemd Init Process & Service Architecture
+- Concept: Linux Boot Process sequence. PID 1 execution (systemd vs launchd).
+- Practice: Writing a custom, production-grade systemd service unit file for a background python app.
+
+DAY 26: Cron Jobs & Task Automation
+- Concept: Crontab syntax, system-wide cron jobs, anacron.
+- Practice: Setting up automated backup scripts running every night at 2:00 AM.
+
+DAY 27 & 28: Shell Scripting for Infrastructure Automation
+- Essentials: Variables, conditionals (if-else), loops (for, while), exit codes ($?).
+- Practice: Writing a robust script that auto-checks disk space and sends an alert if usage exceeds 85%.
+
+DAY 29 & 30: Google SRE Interview Simulation & Performance Tuning
+- Scenario 1: CPU spike at 100% - How to isolate the thread causing it (top, pidstat).
+- Scenario 2: Disk I/O Bottleneck - Debugging slow database writes (iostat, iotop).
+- Scenario 3: Review of 5 classic Google SRE infrastructure architectural interview questions.
+
+===================================================================

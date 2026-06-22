@@ -1,0 +1,331 @@
+===================================================================
+     PYTHON FROM SCRATCH TO GOOGLE DSA - 120 DAYS EXTENDED PLAN
+     Focus: Programming Basics, Core Automation & Interview DSA
+===================================================================
+
+===================================================================
+         PHASE 1: THE CORE PROGRAMMING ENGINE (DAYS 1 - 30)
+===================================================================
+💡 उद्दिष्ट: कोड लिहिण्याची भीती घालवणे, बेसिक सिंटॅक्स शिकणे आणि लॉजिक बिल्ड करणे.
+
+- DAY 1: Setup & Hello World: Installing Python, VS Code, running your first script.
+- DAY 2: Variables & Data Types: Understanding Strings, Integers, Floats, and Booleans.
+
+varible - varible is container that holds data. Data might be integer, string, Booleans
+          varible is like creating placeholder in memory and assigning it some values
+
+Data type - Data type specifies the type of value varible holds.
+
+if we use below function we can specify what type of data is stored in varible
+
+type(a)
+
+- DAY 3: User Input & Basic Math: Using input() to accept data and performing basic arithmetic.
+
+In python we can take user input directly by using input() funtion. this input function gives return value as string/integer as we passed in varible
+
+- DAY 4: Conditional Statements (Part 1): Working with 'if', 'else', and basic comparison.
+
+> greater than
+< less than
+== equal to
+!= not equal to
+
+a = 4
+b = "4"
+
+a is b -- exact location of object in memory
+a == b -- value
+
+suppose you have passed value integer as 4 and string as "4" these are basically same things
+
+- DAY 5: Conditional Statements (Part 2): Complex logic using 'elif', 'and', 'or', 'not'.
+and - goes inside loop if both conditions are satisfied
+or - goes inside inside loop if one of the condition is True
+not - checks whether condition is satisfied or not 
+
+- DAY 6: Introduction to Loops: Writing your first 'while' loops for simple repetitions.
+While loop executes the statement till condition is true
+We can also use else with while loop
+
+- DAY 7: The Power of 'For' Loops: Iterating over ranges and basic sequences.
+For loops can inerate over a sequence of iterable objects in python. Iterating over a sequence is nothing but iterating over strings lists tuples sets dictionaries
+
+- DAY 8: Loop Control: How and when to use 'break' and 'continue' statements cleanly.
+break
+If you are using loop and you want to get out of loop if particular condition satisfies then you use break statement
+continue
+any loop works in iterations if you want to skip any particular iteration then you can use break statement
+
+- DAY 9: Working with Strings: String concatenation, basic indexing, and essential methods (.lower, .upper).
+In python anything that are enclose in '' or "" consider as string
+A string is basically array of textual data
+String are used when you need to work on unicode characters means single characters not words
+
+- DAY 10: Introduction to Lists: Creating lists, adding items (.append), and removing items.
+List are basically ordered collection of data items
+They store multiple items in single variable
+List are seperated by commas and enclosed within square brackets []
+List are changeable means we can add/remove items from list after creation
+List can consist of multiple data types
+
+- DAY 11: List Indexing & Slicing: Extracting specific elements and chunks from a list safely.
+
+- DAY 12: Dictionaries Basics: Storing data in Key-Value pairs, adding and looking up values.
+List are basically ordered collection of data items
+They store multiple items in single variable
+Dictionaries item are stored in key value format and they are sepeated by commas and they are enclosed in {} brackets
+
+if you want to print any value against key
+dict["name"]
+but value is not present against key and we use this format then code will throw error
+then use below syntax
+dict.get("name)
+
+if you want to print value in key value pair format the use dict.items()
+
+- DAY 13: Sets & Tuples: Understanding immutable sequences and collecting unique items.
+Tuples are basically ordered collection of data items
+They store multiple items in single variable
+tuples are seperated by commas and enclosed within square brackets ()
+but the difference between tuple and dictionaries,list is tuple can not change once created
+
+sets are basically unordered collection of data items
+They store multiple items in single variable
+sets are seperated by commas and enclosed within square brackets {}
+you can not change value in set after creation
+sets do not contain duplicate values
+
+
+- DAY 14: Week 2 Review & Mini-Project: Building a command-line Calculator or Guessing Game.
+
+
+- DAY 15: Introduction to Functions: Defining blocks of code with 'def' and calling them.
+function is a block code that performs a specific task whenever its called. 
+In bigger programms we have large amount of code instead writing it again and again its better to create fucntion and call that function whenever we need in programms
+type of functions
+1 - built in function
+2 - user defiend function
+
+def function_name(argument1,argument2):
+      logic
+      return/print
+
+- DAY 16: Function Arguments & Returns: Passing data into functions and getting results back via 'return'.
+There are four type of argument we can provide in function
+Default 
+- if you did not pass any value in function the function will pick those default values
+def add (a=1, b=2)
+      print(a+b)
+add()
+in this scenario no value passed in function so it will pick default values and if any value passed at time of funtion calling then it will override those values
+
+Keyword
+ - we can provide arguments with key value format this way the interpretor recogzines the argument by parameter name
+def add (a=1, b=2)
+      print(a+b)
+add(b=21, a=15)
+
+Variable length
+- 
+
+Required
+- In case we dont pass agrument in key value format then it is neccessary the arguments are passed in correct order and number of argumes should match the number of arguments in actual function
+def add (a, b)
+      print(a+b)
+add(1)
+
+return statement -
+return statement is used to return value of expression back to the calling function
+return does not print any value it basically stores output in memory
+
+- DAY 17: Local vs Global Variables: Understanding variable scope (where variables live and die).
+variable - 
+variable basically stores value in memory 
+local variable -
+variable which defined in the function and the scope of varible is within function
+gloabl variable - 
+the varible defined outside function but its scope is inside function as well as outside function
+a = int(input("Enter a number: "))
+
+def sum ():
+    b = int(input("Enter another number: "))
+    total = a + b
+    print(f"The sum of {a} and {b} is: {total}")# This will raise an error because b is not defined in this scope
+sum()
+here a is global varible we can access within or outside function
+b is local varible can access within function only and if you try to override value of global varible in function it will always choose value from function only 
+
+- DAY 18: File Handling Basics (Part 1): How to open, read, and close text files securely.
+File Handling in Python means reading data from files, writing data to files, and modifying file contents stored on disk.
+Before we can perform any operation on file we must first need to open it.
+Python provides the open() function to open file.
+It takes two argumets first name of the file and second is mode of file the file in which you want to perfom any operation
+Closing file is very important in the scenario of append and write becuase it will not write data in that file if you dont close the file
+modes in file handeling
+r - read - opens the file and gives error if file does not exist
+f = open("myfile.txt", "r")
+test = f.read()
+print(test)
+f.close()
+f.read()        # Entire file
+f.readline()   # Single line
+f.readlines()  # All lines as list
+
+w - write - writes - w mode overwrites the existing content and creates a file if not exist
+f = open("myfile.txt", "w")
+f.write("content")
+f.close()
+
+a - append - add content at the end of file
+f = open("myfile.txt", "a")
+f.write("content")
+f.close()
+
+if you use with keyword then you dont need to close the file
+with open("myfile.txt", "a/w") as f
+f.write("content")
+
+
+- DAY 19: File Handling Basics (Part 2): Writing new data and appending logs to existing text files.
+f = open("myfile.txt", "a")
+f.write("logs")
+f.close()
+
+r+ - read plus write
+you you want to print specific lines
+enumerate basically index+1 print as it is passed if passed print 1st content dont need to write index 0
+
+with open("myfile.txt", "r") as f:
+
+    for i, line in enumerate(f, start=1):
+
+        if i in [2, 3, 5]:
+
+            print(line.strip()) 
+
+- DAY 20: Working with Modules: Importing built-in tools like 'math', 'random', and 'time'.
+- DAY 21: Error Handling (Part 1): Using 'try' and 'except' blocks to stop your script from crashing.
+- DAY 22: Error Handling (Part 2): Catching specific errors (ValueError, IndexError) and using 'finally'.
+- DAY 23: List Comprehensions: The beginner-friendly way to write clean, one-line list creation loops.
+- DAY 24: Introduction to Objects: What is Object-Oriented Programming (OOP) in simple words?
+- DAY 25: Classes & Instances: Creating your first custom Class and setting attributes with __init__.
+- DAY 26: Class Methods: Writing functions inside your classes to modify object states.
+- DAY 27: Basic OOP Inheritance: Creating a parent class and a child class to share code.
+- DAY 28: Installing External Libraries: Understanding pip, virtual environments, and third-party code.
+- DAY 29: Debugging Code: Learning how to read Python error logs (Tracebacks) and fix bugs manually.
+- DAY 30: Phase 1 Capstone Project: Building a complete command-line Task Manager (CRUD application).
+
+
+===================================================================
+        PHASE 2: PRACTICAL AUTOMATION & SYSTEMS (DAYS 31 - 60)
+===================================================================
+💡 उद्दिष्ट: रिअल-वर्ल्ड फाइल्स, सिस्टम टूल्स आणि ऑटोमेशन स्क्रिप्ट्स हाताळणे.
+
+- DAY 31: The OS Module: Navigating filesystems, creating folders, and checking paths.
+- DAY 32: The Sys Module: Reading command-line arguments passed to your script via sys.argv.
+- DAY 33: Automation with Shutil: Moving, copying, and renaming files and whole directories automatically.
+- DAY 34: Working with CSV Files: Reading and writing structured spreadsheet rows natively.
+- DAY 35: Working with JSON Data: Parsing API-style strings into Python dictionaries and vice-versa.
+- DAY 36: Scripting with YAML: Reading configuration files used widely in modern infrastructure.
+- DAY 37: Regular Expressions (Regex Basics): Finding patterns like emails or IP addresses in text blocks.
+- DAY 38: Text Log Parsing Project: Writing a script to scan a server log and pull out all lines with "ERROR".
+- DAY 39: Introduction to the Subprocess Module: Running basic Linux system commands from Python.
+- DAY 40: Subprocess Output Manipulation: Capturing stdout and stderr from system commands.
+- DAY 41: Introduction to Web Requests: Installing the 'requests' library to talk to the internet.
+- DAY 42: Consuming REST APIs: Sending GET requests to fetch data from live public web sources.
+- DAY 43: Handling API Status Codes: Checking for 200 (Success) vs 404/500 and handling errors.
+- DAY 44: Webhooks Ingestion: Sending automated data payloads from Python directly to Slack or Discord channels.
+- DAY 45: Datetime Module: Working with system timestamps, formatting dates, and measuring script runtimes.
+- DAY 46: The Logging Module: Replacing basic 'print' statements with standard production-grade logs.
+- DAY 47: Introduction to AWS SDK (Boto3): Installing boto3 and configuring local credentials.
+- DAY 48: Boto3 S3 Basics: Listing all cloud storage buckets inside an AWS account.
+- DAY 49: Boto3 S3 Uploads/Downloads: Automating backup routines by shipping local files to the cloud.
+- DAY 50: Boto3 EC2 Basics: Listing virtual servers and checking their current runtime states.
+- DAY 51: Introduction to Multithreading: Splitting simple I/O tasks to run multiple operations together.
+- DAY 52: Multi-Server Pinger Project: Using threads to ping 20 different server endpoints simultaneously.
+- DAY 53: Introduction to SSH via Paramiko: Connecting securely to a remote Linux instance via code.
+- DAY 54: Paramiko Command Execution: Executing terminal scripts on remote servers and printing output.
+- DAY 55: Automated Environment Checks: Writing a script to check local Disk Space and RAM usage alert benchmarks.
+- DAY 56: Code Formatting & Linting: Learning PEP 8 rules using automated formatters like 'Black'.
+- DAY 57: Introduction to Testing: Writing basic assertion unit tests using the 'unittest' library.
+- DAY 58: Code Optimization Basics: Spotting slow code loops and cleaning up structural redundancy.
+- DAY 59 & 60: Phase 2 Automation Capstone: Deploy an automated system monitoring framework that checks local health metrics, formats results into JSON, and webhooks the summary report.
+
+
+===================================================================
+      PHASE 3: INTERVIEW ALGORITHMS & LINEAR DATA PATHS (DAYS 61 - 90)
+===================================================================
+💡 उद्दिष्ट: समस्या सोडवण्याची सवय लावणे आणि कॉम्प्युटर सायन्सचे मूलभूत पॅटर्न्स समजून घेणे.
+
+- DAY 61: Introduction to DSA: Why algorithms matter and how code scales with data input size.
+- DAY 62: Time Complexity: Reading and analyzing Big-O notations (O(1), O(N), O(N^2)).
+- DAY 63: Space Complexity: Measuring memory footprints of your data structures.
+- DAY 64: Linear Search vs Binary Search: Comparing how we look through sorted and unsorted sets.
+- DAY 65: Array & List Internal Mechanics: How data is organized next to each other in system RAM.
+- DAY 66: Two-Pointer Pattern (Part 1): Using left and right boundaries to solve target sum loops.
+- DAY 67: Two-Pointer Pattern (Part 2): Reversing arrays or filtering elements inline without extra memory copy.
+- DAY 68: Fast & Slow Pointers: Tracking linked networks or catching cycle loops early.
+- DAY 69: Sliding Window (Part 1): Processing contiguous subarrays of fixed length efficiently.
+- DAY 70: Sliding Window (Part 2): Dynamic arrays tracking dynamic conditions (e.g., maximum string subsets).
+- DAY 71: Prefix Sum Strategies: Speeding up slice calculations by caching computational runtimes.
+- DAY 72: Binary Search Mechanics: Writing flawless midpoint equations while avoiding index overflow errors.
+- DAY 73: Binary Search Boundaries: Handling duplicated values and setting upper/lower data targets.
+- DAY 74: Binary Search on Solution Space: Tracking optimizations where an exact range matrix doesn't exist.
+- DAY 75: Introduction to Linked Lists: Nodes and pointer linkages compared directly against arrays.
+- DAY 76: Linked List Mutation: Appending, removing, and indexing dynamic nodes manually.
+- DAY 77: In-Place Node Reversal: The standard technique for shifting pointer directions sequentially.
+- DAY 78: Introduction to Stacks: Mastering the Last-In, First-Out (LIFO) model using standard list tools.
+- DAY 79: Bracket & Syntax Validation: Utilizing stacks to parse open/close bounds seamlessly.
+- DAY 80: Monotonic Stack Mechanics: Tracking strictly increasing or decreasing data trends cleanly.
+- DAY 81: Introduction to Queues: Mastering the First-In, First-Out (FIFO) pipeline architecture.
+- DAY 82: Dynamic Buffers via Deque: Using collections.deque to scale dual-ended queue lookups.
+- DAY 83: Basic Sorting Algorithms: Looking over how Bubble Sort and Selection Sort function under the hood.
+- DAY 84: Advanced Sorting Concepts: Understanding the scaling benefits of Merge Sort and Quick Sort logic.
+- DAY 85: Introduction to Hashing: How hash maps use numeric signatures for instant access.
+- DAY 86: Resolving Hash Collisions: Understanding what happens when two records share a signature.
+- DAY 87: Designing Multi-index Maps: Linking dictionaries to balance quick item lookup parameters.
+- DAY 88: Basics of Recursion: Writing functions that call themselves without spawning infinite loops.
+- DAY 89: Dynamic Call Stacks: Tracing how memory registers handle recursive functions manually.
+- DAY 90: Phase 3 Review & Benchmark: Solving a set of foundational array, string, and hash array problems.
+
+
+===================================================================
+      PHASE 4: GOOGLE-TIER NON-LINEAR & RECURSIVE PATTERNS (DAYS 91 - 120)
+===================================================================
+💡 उद्दिष्ट: प्रगत डेटा स्ट्रक्चर्स (झाडे, आलेख) आणि गुगलच्या आवडत्या मुलाखतीचे पॅटर्न मास्टर करणे.
+
+- DAY 91: Introduction to Hierarchical Data: Why Trees are vital for parsing network relationships.
+- DAY 92: Binary Tree Architectures: Parents, children, and leaves logic constraints.
+- DAY 93: Depth-First Search (DFS) Tree Traversals: Writing Pre-order, In-order, and Post-order recursions.
+- DAY 94: Breadth-First Search (BFS) Tree Traversals: Level-by-level tracking using array queues.
+- DAY 95: Binary Search Trees (BST): Dynamic sorting behavior and tree mutation validation bounds.
+- DAY 96: Heap Data Structure Basics: Prioritizing items inside Min-Heaps and Max-Heaps.
+- DAY 97: Top-K Calculations via Python Heapq: Managing stream optimization fields natively.
+- DAY 98: Trie (Prefix Trees) Core: Structuring string paths for instant prefix lookup validation routines.
+- DAY 99: Introduction to Graphs: Vertices and edges representing multi-hop system topologies.
+- DAY 100: Graph Configurations: Adjacency Lists vs Adjacency Matrices storage considerations.
+- DAY 101: Graph Discovery via DFS: Tracing deep path connections recursively across open maps.
+- DAY 102: Graph Discovery via BFS: Computing shortest paths on unweighted network setups.
+- DAY 103: Dynamic Cycle Identification: Preventing loops from hijacking routing pipelines.
+- DAY 104: Topological Sorting Logic: Sorting task schedules matching absolute prerequisites.
+- DAY 105: Network Shortest Path Operations: Implementing Dijkstra’s Algorithm via min-heaps.
+- DAY 106: Foundations of Advanced Backtracking: Exploring all paths inside state-space branches safely.
+- DAY 107: State Branch Pruning: Terminating invalid paths early to maximize processor capacity.
+- DAY 108: Subset & Permutation Generation: Handling comprehensive permutations without missing configurations.
+- DAY 109: Dynamic Programming Concepts: Identifying overlapping subproblems and sub-structures.
+- DAY 110: Memoization Strategy (Top-Down): Accelerating performance through look-up array caching.
+- DAY 111: Tabulation Strategy (Bottom-Up): Transforming code logic into structural matrix tables.
+- DAY 112: Classic Dynamic Programming Problems: Building solutions for Coin Change arrays.
+- DAY 113: Two-Dimensional Dynamic Programming: Multi-stage tracking across grid coordinate planes.
+- DAY 114: Greedy Choices Optimization: Selecting local maximum targets to clear interval blocks.
+- DAY 115: Overlapping Interval Isolation: Isolating and consolidating overlapping data boundaries.
+- DAY 116: Google Interview Technical Rubric: Reviewing structural constraints and communication bars.
+- DAY 117: Explicit Trace Table Dry-runs: Testing logic bugs using variable tracing charts.
+- DAY 118: Mock Tech Loops (Round 1): Problem mapping, verbal brainstorming, and syntax accuracy.
+- DAY 119: Mock Tech Loops (Round 2): Edge-case evaluation covering minimal/maximal constraints.
+- DAY 120: THE ULTIMATE GRADUATION EXPERIMENT: 
+  - Challenge: Complete a multi-hour simulation tackling real Google-tier interview sets out loud.
+  - Execution Rules: Clarify problem constraints, explicitly call out Time/Space tradeoffs, sketch dry-run tracing matrix tables, and type production-clean Python blocks without any assistance from IDE autocomplete features.
+
+===================================================================
