@@ -109,17 +109,6 @@ if path1.exists() and path1.is_dir():
 validate_json_file(filepath2)
 validate_json_file(filepath3)
 
-# फायनल रिपोर्ट प्रिंटिंग (तुझा मूळ फॉरमॅट)
-if all_errors:
-    print(f"\nValidation Report - Found {len(all_errors)} errors\n")
-    for err in all_errors:
-        print(f"File: {err['file']}")
-        print(f"Error: {err['error']}")
-        print(f"Line: {err['line']}")
-        print(f"Column: {err['column']}")
-        print("-" * 50)
-else:
-    print("All JSON files are valid 🚀")
 
 if all_errors:
     print(f"\n🛑 Validation Report - Found {len(all_errors)} errors\n")
