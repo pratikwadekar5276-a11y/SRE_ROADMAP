@@ -75,9 +75,13 @@ def validate_json_file(file_path):
         open_braces += line_str.count('{') - line_str.count('}')
         open_brackets += line_str.count('[') - line_str.count(']')
 
-        # 🔹 UNIVERSAL BYPASS DETECTION (ARN, URL, CSP & APIG एनहान्समेंट) 🔹
+        # 🔹 UNIVERSAL BYPASS DETECTION 🔹
         is_arn = "arn:" in line_str.lower()
-        is_apig = "apig." in line_str.lower()  # 🎯 नवीन APIG बायपास नियम
+        is_apig = "apig." in line_str.lower()
+        is_java_env = "java_tool" in line_str.lower()  # 🎯 नवीन JAVA_TOOL_OPTIONS बायपास नियम
+        
+        url_count = line_str.lower().count("http://") + line_str.lower().count("https://")
+        is_multiple_urls = url_count > 1
         
         is_pure_url = False
         if "://" in line_str and "=" not in line_str:
@@ -89,9 +93,19 @@ def validate_json_file(file_path):
         # Check 2: Missing Quotes, Colons/Equals or Malformed Key-Value Pairs
         has_separator = ":" in line_str or "=" in line_str
         
-        # जर ओळीत APIG, ARN किंवा स्वतंत्र URL असेल, तर स्प्लिटिंग लॉजिक पूर्णपणे बायपास करा!
-        if has_separator and not is_arn and not is_pure_url and not is_apig:
-            separator = "=" if "=" in line_str else ":"
+        # 🎯 जर JAVA ENV, मल्टिपल URLs, APIG, ARN किंवा सिंगल URL असेल, तर बायपास करा!
+        if has_separator and not is_arn and not is_pure_url and not is_apig and not is_multiple_urls and not is_java_env:
+            if "=" in line_str:
+                first_equal_idx = line_str.find("=")
+                before_equal = line_str[:first_equal_idx].strip()
+                if before_equal.startswith('"') and before_equal.endswith('"'):
+                    separator = "="
+                elif ":" in line_str:
+                    separator = ":"
+                else:
+                    separator = "="
+            else:
+                separator = ":"
             
             if separator == ":" and "://" in line_str:
                 first_colon_idx = line_str.find(":")
@@ -137,9 +151,9 @@ def validate_json_file(file_path):
                                 })
                         else:
                             starts_with_quote = clean_value.startswith('"')
-                            ends_with_quote = clean_value.endswith('"')
+                            ends_with_quote = clean_value.endswith('"') or clean_value.rstrip(',"').endswith('=')
                             
-                            if starts_with_quote != ends_with_quote:
+                            if starts_with_quote != ends_with_quote and not clean_value.endswith('='):
                                 if not (line_str.startswith('"') and line_str.rstrip(',').endswith('"')):
                                     all_errors.append({
                                         "file": str(file_path),
@@ -167,8 +181,8 @@ def validate_json_file(file_path):
                     "column": len(line)
                 })
         
-        # 🎯 जर ओळ APIG / ARN / URL / CSP ची असेल, तर फक्त कॉमा व्हॅलिडेट करणे
-        elif line_str.endswith('"') or line_str.rstrip(',').endswith('"') or is_arn or is_pure_url or is_apig or clean_key == "Content-Security-Policy":
+        # 🎯 जर ओळ JAVA_TOOL_OPTIONS ची असेल, तरीही तिचा शेवटचा कॉमा व्यवस्थित व्हॅलिडेट झाला पाहिजे
+        elif line_str.endswith('"') or line_str.rstrip(',').endswith('"') or line_str.rstrip(',"').endswith('=') or is_arn or is_pure_url or is_apig or is_multiple_urls or is_java_env or clean_key == "Content-Security-Policy":
             if not line_str.endswith(','):
                 is_next_field = ":" in next_line_str or "=" in next_line_str
                 is_array_element = next_line_str.startswith('"')
@@ -176,7 +190,7 @@ def validate_json_file(file_path):
                 if is_next_field or is_array_element:
                     all_errors.append({
                         "file": str(file_path),
-                        "error": f"Missing comma (,) after string/ARN/URL/APIG value before the next field or element starts",
+                        "error": f"Missing comma (,) after string/ARN/URL/APIG/JAVA value before the next field or element starts",
                         "line": real_line_no,
                         "column": len(line)
                     })
