@@ -104,16 +104,8 @@ def validate_json_file(file_path):
                 if not clean_value.startswith(('{', '[')):
                     
                     # 🔹 CRITICAL SPECIFIC OVERRIDE FOR Content-Security-Policy 🔹
+                    # कोट्स असोत वा नसोत, CSP ची व्हॅल्यू डायरेक्ट पास करून मधील सगळा पसारा स्किप करणे
                     if clean_key == "Content-Security-Policy":
-                        starts_with_quote = clean_value.startswith('"')
-                        ends_with_quote = clean_value.endswith('"')
-                        if not (starts_with_quote and ends_with_quote):
-                            all_errors.append({
-                                "file": str(file_path),
-                                "error": f"Malformed Content-Security-Policy format (Must start and end perfectly with double quotes)",
-                                "line": real_line_no,
-                                "column": len(line)
-                            })
                         continue
 
                     # Regular logic for other fields
@@ -159,8 +151,8 @@ def validate_json_file(file_path):
                     "column": len(line)
                 })
         
-        # CASE B: Line ends with string quotes '"' (Handles Fields and Arrays!)
-        elif line_str.endswith('"') or line_str.rstrip(',').endswith('"'):
+        # CASE B: Line ends with string quotes '"' or standard dynamic values
+        elif line_str.endswith('"') or line_str.rstrip(',').endswith('"') or clean_key == "Content-Security-Policy":
             if not line_str.endswith(','):
                 is_next_field = ":" in next_line_str or "=" in next_line_str
                 is_array_element = ":" not in line_str and "=" not in line_str and next_line_str.startswith('"')
@@ -205,7 +197,7 @@ if all_errors:
     BLUE_COLOR  = "\033[94m"
     RESET_COLOR = "\033[0m"
     
-    print(f"\n{BLUE_COLOR}Validation Report - Found {len(all_errors)} errors{RESET_COLOR}")
+    print(f"\n{BLUE_COLOR}🔹 Validation Report - Found {len(all_errors)} errors{RESET_COLOR}")
     
     col_widths = [50, 6, 12, 65]
     row_format = "│ {{:<{}}} │ {{:<{}}} │ {{:<{}}} │ {{:<{}}} │".format(*col_widths)
