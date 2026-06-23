@@ -44,17 +44,13 @@ def validate_json_file(file_path):
     for idx, line in enumerate(lines, start=1):
         raw_line = line.strip()
         
-        # जर लाईन सरळ // ने सुरू होत असेल तर ती पूर्ण कमेंट आहे
         if raw_line.startswith("//"):
             continue
             
-        # 🎯 सुपर सेफ्टी: जर ओळीत मल्टिपल URLs किंवा JAVA_TOOL_OPTIONS असेल, तर कोणतंच कमेंट स्प्लिटिंग करू नका!
-        # सरळ ती ओळ जशीच्या तशी सुरक्षित पुढे पाठवा.
         if raw_line.count("://") > 1 or "java_tool" in raw_line.lower():
             cleaned_lines.append({"line_no": idx, "text": raw_line, "raw": line, "is_immune": True})
             continue
 
-        # इतर सामान्य ओळींसाठी कमेंट काढणे
         if "//" in raw_line:
             if "://" not in raw_line:
                 clean_text = line.split("//", 1)[0].strip()
@@ -84,7 +80,7 @@ def validate_json_file(file_path):
         open_braces += line_str.count('{') - line_str.count('}')
         open_brackets += line_str.count('[') - line_str.count(']')
 
-        # 🔹 UNIVERSAL BYPASS DETECTION 🔹
+        # UNIVERSAL BYPASS DETECTION
         is_arn = "arn:" in line_str.lower()
         is_apig = "apig." in line_str.lower()
         is_java_env = "java_tool" in line_str.lower() or is_immune
@@ -99,8 +95,6 @@ def validate_json_file(file_path):
 
         # Check 2: Missing Quotes, Colons/Equals or Malformed Key-Value Pairs
         has_separator = ":" in line_str or "=" in line_str
-        
-        # 🎯 जर ओळ 'Immune' (मल्टिपल URLs / Java) असेल तर Check 2 पूर्णपणे ब्लॉक करा!
         should_bypass_quotes = is_arn or is_pure_url or is_apig or is_multiple_urls or is_java_env
         
         if has_separator and not should_bypass_quotes:
@@ -162,14 +156,17 @@ def validate_json_file(file_path):
                             starts_with_quote = clean_value.startswith('"')
                             ends_with_quote = clean_value.endswith('"') or clean_value.rstrip(',"').endswith('=')
                             
-                            if starts_with_quote != ends_with_quote and not clean_value.endswith('='):
-                                if not (line_str.startswith('"') and line_str.rstrip(',').endswith('"')):
-                                    all_errors.append({
-                                        "file": str(file_path),
-                                        "error": f"Malformed string value (Mismatched or missing double quotes around value: {value})",
-                                        "line": real_line_no,
-                                        "column": len(line)
-                                    })
+                            # 🎯 नवीन बदल: जर संपूर्ण ओळ कोट्सने सुरक्षित असेल (उदा. "key" = "value"), 
+                            # तर मधे कुठलाही लेटर किंवा सिम्बॉल आला तरी त्याला सरळ valid माना!
+                            is_entire_line_quoted = line_str.startswith('"') and line_str.rstrip(',').endswith('"')
+                            
+                            if starts_with_quote != ends_with_quote and not clean_value.endswith('=') and not is_entire_line_quoted:
+                                all_errors.append({
+                                    "file": str(file_path),
+                                    "error": f"Malformed string value (Mismatched or missing double quotes around value: {value})",
+                                    "line": real_line_no,
+                                    "column": len(line)
+                                })
 
         # Check 3: Universal Missing Commas Check (Object Braces, Strings & Arrays Aware)
         if line_no == total_clean_lines:
@@ -190,7 +187,6 @@ def validate_json_file(file_path):
                     "column": len(line)
                 })
         
-        # मल्टिपल URLs किंवा जावा ऑप्शन्सच्या ओळींचा फक्त शेवटचा कॉमा व्हॅलिडेट करणे
         elif line_str.endswith('"') or line_str.rstrip(',').endswith('"') or line_str.rstrip(',"').endswith('=') or should_bypass_quotes or clean_key == "Content-Security-Policy":
             if not line_str.endswith(','):
                 is_next_field = ":" in next_line_str or "=" in next_line_str
