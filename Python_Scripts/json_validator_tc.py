@@ -44,10 +44,18 @@ def validate_json_file(file_path):
     for idx, line in enumerate(lines, start=1):
         raw_line = line.strip()
         
-        # SMART COMMENT STRIPPING
+        # जर लाईन सरळ // ने सुरू होत असेल तर ती पूर्ण कमेंट आहे
         if raw_line.startswith("//"):
             continue
-        elif "//" in raw_line:
+            
+        # 🎯 सुपर सेफ्टी: जर ओळीत मल्टिपल URLs किंवा JAVA_TOOL_OPTIONS असेल, तर कोणतंच कमेंट स्प्लिटिंग करू नका!
+        # सरळ ती ओळ जशीच्या तशी सुरक्षित पुढे पाठवा.
+        if raw_line.count("://") > 1 or "java_tool" in raw_line.lower():
+            cleaned_lines.append({"line_no": idx, "text": raw_line, "raw": line, "is_immune": True})
+            continue
+
+        # इतर सामान्य ओळींसाठी कमेंट काढणे
+        if "//" in raw_line:
             if "://" not in raw_line:
                 clean_text = line.split("//", 1)[0].strip()
             else:
@@ -60,7 +68,7 @@ def validate_json_file(file_path):
             clean_text = raw_line
             
         if clean_text:
-            cleaned_lines.append({"line_no": idx, "text": clean_text, "raw": line})
+            cleaned_lines.append({"line_no": idx, "text": clean_text, "raw": line, "is_immune": False})
 
     total_clean_lines = len(cleaned_lines)
 
@@ -68,6 +76,7 @@ def validate_json_file(file_path):
         line_str = line_data['text']
         real_line_no = line_data['line_no']
         line = line_data['raw']
+        is_immune = line_data.get('is_immune', False)
         
         clean_key = ""
 
@@ -78,8 +87,8 @@ def validate_json_file(file_path):
         # 🔹 UNIVERSAL BYPASS DETECTION 🔹
         is_arn = "arn:" in line_str.lower()
         is_apig = "apig." in line_str.lower()
-        is_java_env = "java_tool" in line_str.lower()
-        is_multiple_urls = line_str.count("://") > 1
+        is_java_env = "java_tool" in line_str.lower() or is_immune
+        is_multiple_urls = line_str.count("://") > 1 or is_immune
         
         is_pure_url = False
         if "://" in line_str and "=" not in line_str and not is_multiple_urls:
@@ -91,7 +100,7 @@ def validate_json_file(file_path):
         # Check 2: Missing Quotes, Colons/Equals or Malformed Key-Value Pairs
         has_separator = ":" in line_str or "=" in line_str
         
-        # 🎯 नियम: जर बायपास ट्रिगर झाला, तर Check 2 चं संपूर्ण कोट व्हॅलिडेशन लॉजिक स्किप करा!
+        # 🎯 जर ओळ 'Immune' (मल्टिपल URLs / Java) असेल तर Check 2 पूर्णपणे ब्लॉक करा!
         should_bypass_quotes = is_arn or is_pure_url or is_apig or is_multiple_urls or is_java_env
         
         if has_separator and not should_bypass_quotes:
