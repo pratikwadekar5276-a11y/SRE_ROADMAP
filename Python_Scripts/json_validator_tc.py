@@ -70,13 +70,12 @@ def validate_json_file(file_path):
             if value.startswith('"') and not (value.endswith('"') or value.endswith('",') or value.endswith('"}') or value.endswith('"]')):
                 all_errors.append({
                     "file": str(file_path),
-                    "file": str(file_path),
                     "error": "Unterminated string constant or invalid delimiter in value",
                     "line": line_no,
                     "column": len(line)
                 })
 
-        # Check 3: Missing Commas between sibling fields/objects
+        # Check 3: Missing Commas between JSON blocks/objects (Custom Logic Fix)
         if line_no < len(lines):
             # Evaluate the next non-empty line context
             next_line_idx = line_no
@@ -87,12 +86,12 @@ def validate_json_file(file_path):
                     break
                 next_line_idx += 1
                 
-            # If the next line introduces a new key or structural block, verify terminal comma on current line
-            if next_line_str and (next_line_str.startswith('"') or next_line_str.startswith('{')):
-                if not (line_str.endswith(',') or line_str.endswith('{') or line_str.endswith('[') or line_str.endswith('}') or line_str.endswith(']')):
+            # Logic: If current line ends with '}' and next line starts with a new block '{' or a new key '"'
+            if line_str.endswith('}'):
+                if next_line_str and (next_line_str.startswith('{') or next_line_str.startswith('"')):
                     all_errors.append({
                         "file": str(file_path),
-                        "error": "Missing comma (,) or invalid structure block separator at the end of this line",
+                        "error": "Missing comma (,) after closing brace '}' before the next block starts",
                         "line": line_no,
                         "column": len(line)
                     })
@@ -128,11 +127,11 @@ validate_json_file(filepath3)
 # 5. Final Report Generation & TeamCity Build Control Logic
 if all_errors:
     # ANSI Escape Codes for Output Colorization (\033[91m = Bright Red, \033[0m = Reset)
-    RED_COLOR   = "\033[91m"
+    BLUE_COLOR  = "\033[94m"
     RESET_COLOR = "\033[0m"
     
-    # Print the primary header statement in red to draw developer attention in build logs
-    print(f"\n{RED_COLOR}🛑 Validation Report - Found {len(all_errors)} errors{RESET_COLOR}")
+    # Print the primary header statement in dark/bright blue as requested
+    print(f"{BLUE_COLOR}Validation Report - Found {len(all_errors)} errors{RESET_COLOR}")
     
     # Define table column widths: File, Line, Column, Error Message
     # Column width is configured to 12 to cleanly contain "End of file" metadata string
