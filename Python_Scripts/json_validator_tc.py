@@ -61,8 +61,11 @@ def validate_json_file(file_path):
         open_braces += line_str.count('{') - line_str.count('}')
         open_brackets += line_str.count('[') - line_str.count(']')
 
+        # CRITICAL REUSABLE CHECK: Detect if this line is a standalone ARN string
+        is_standalone_arn = line_str.startswith('"arn') or line_str.startswith('arn') or "arn:aws" in line_str
+
         # Check 2: Missing Quotes, Colons or Malformed Key-Value Pairs (Standalone ARN Fixed)
-        if ":" in line_str:
+        if ":" in line_str and not is_standalone_arn:
             parts = line_str.split(":", 1)
             key = parts[0].strip()
             value = parts[1].strip()
@@ -70,46 +73,34 @@ def validate_json_file(file_path):
             # Clean trailing commas or brackets from value
             clean_value = value.rstrip(',}]').strip()
             
-            # CRITICAL ARN FIX: Check if it's a standalone ARN string mistaken as Key-Value
-            is_standalone_arn = key.startswith('"arn') or key.startswith('arn')
-            
-            if not is_standalone_arn:
-                # Validation A: If Key lacks enclosing double quotes
-                if key and not (key.startswith('"') and key.endswith('"')):
-                    is_portfolio_file = "portfolios.conf" in str(file_path)
-                    is_valid_portfolio_key = is_portfolio_file and key.replace('-', '').isalnum()
-                    
-                    if not key.startswith('{') and not is_valid_portfolio_key:
-                        all_errors.append({
-                            "file": str(file_path),
-                            "error": f"Invalid Key format (Missing double quotes around key: {key})",
-                            "line": line_no,
-                            "column": 1
-                        })
+            # Validation A: If Key lacks enclosing double quotes
+            if key and not (key.startswith('"') and key.endswith('"')):
+                is_portfolio_file = "portfolios.conf" in str(file_path)
+                is_valid_portfolio_key = is_portfolio_file and key.replace('-', '').isalnum()
                 
-                # Validation B: Catch mismatched quotes
-                if "arn:aws" in clean_value:
-                    if not clean_value.endswith('"') and '"' in clean_value:
+                if not key.startswith('{') and not is_valid_portfolio_key:
+                    all_errors.append({
+                        "file": str(file_path),
+                        "error": f"Invalid Key format (Missing double quotes around key: {key})",
+                        "line": line_no,
+                        "column": 1
+                    })
+            
+            # Validation B: Catch mismatched quotes
+            if clean_value and clean_value not in ['true', 'false', 'null'] and not clean_value.replace('.', '', 1).isdigit():
+                if not clean_value.startswith(('{', '[')):
+                    starts_with_quote = clean_value.startswith('"')
+                    ends_with_quote = clean_value.endswith('"')
+                    
+                    if starts_with_quote != ends_with_quote:
                         all_errors.append({
                             "file": str(file_path),
-                            "error": f"Malformed ARN string structure (Check closing quotes around ARN: {value})",
+                            "error": f"Malformed string value (Mismatched or missing double quotes around value: {value})",
                             "line": line_no,
                             "column": len(line)
                         })
-                elif clean_value and clean_value not in ['true', 'false', 'null'] and not clean_value.replace('.', '', 1).isdigit():
-                    if not clean_value.startswith(('{', '[')):
-                        starts_with_quote = clean_value.startswith('"')
-                        ends_with_quote = clean_value.endswith('"')
-                        
-                        if starts_with_quote != ends_with_quote:
-                            all_errors.append({
-                                "file": str(file_path),
-                                "error": f"Malformed string value (Mismatched or missing double quotes around value: {value})",
-                                "line": line_no,
-                                "column": len(line)
-                            })
 
-        # Check 3: Universal Missing Commas Check (ARN and Last-line Aware)
+        # Check 3: Universal Missing Commas Check (ARN, Portfolio and Last-line Aware)
         if line_no < len(cleaned_lines):
             next_line_idx = line_no
             next_line_str = ""
@@ -131,8 +122,13 @@ def validate_json_file(file_path):
                             "column": len(line)
                         })
                 elif line_str.endswith('"') or (("arn:aws" in line_str) and line_str.rstrip(',').endswith('"')):
+                    # If next line closes the block/array, we DO NOT need a comma
+                    if is_next_closing:
+                        continue
+                        
                     if next_line_str.startswith('"') and not line_str.endswith(','):
-                        if not is_next_closing:
+                        # Only throw error if it is genuinely a misplaced config line, not a safe standalone ARN
+                        if not is_standalone_arn:
                             all_errors.append({
                                 "file": str(file_path),
                                 "error": f"Missing comma (,) after string/ARN value before the next field starts",
