@@ -43,11 +43,9 @@ def validate_json_file(file_path):
     cleaned_lines = []
     for line in lines:
         raw_line = line.strip()
-        # If line starts with //, treat it as an empty line (ignored)
         if raw_line.startswith("//"):
             cleaned_lines.append("")
         elif "//" in raw_line:
-            # If comment is at the end of a line, strip the comment part out
             cleaned_lines.append(line.split("//", 1)[0])
         else:
             cleaned_lines.append(line)
@@ -55,7 +53,7 @@ def validate_json_file(file_path):
     for line_no, line in enumerate(cleaned_lines, start=1):
         line_str = line.strip()
         
-        # Skip empty lines or completely commented lines to prevent false errors
+        # Skip empty lines or completely commented lines
         if not line_str:
             continue
 
@@ -63,18 +61,17 @@ def validate_json_file(file_path):
         open_braces += line_str.count('{') - line_str.count('}')
         open_brackets += line_str.count('[') - line_str.count(']')
 
-        # Check 2: Missing Quotes, Colons or Malformed Key-Value Pairs (ARN & Comment Aware)
+        # Check 2: Missing Quotes, Colons or Malformed Key-Value Pairs (ARN & Special Strings Fixed)
         if ":" in line_str:
             parts = line_str.split(":", 1)
             key = parts[0].strip()
             value = parts[1].strip()
             
-            # Clean trailing commas or brackets from value for validation stability
-            clean_value = value.rstrip(',}]')
+            # Clean trailing commas or brackets from value
+            clean_value = value.rstrip(',}]').strip()
             
             # Validation A: If Key lacks enclosing double quotes
             if key and not (key.startswith('"') and key.endswith('"')):
-                # EXCLUSION FOR PORTFOLIO FILE: Allow unquoted keys with hyphens only in portfolios.conf
                 is_portfolio_file = "portfolios.conf" in str(file_path)
                 is_valid_portfolio_key = is_portfolio_file and key.replace('-', '').isalnum()
                 
@@ -87,8 +84,7 @@ def validate_json_file(file_path):
                     })
             
             # Validation B: Catch mismatched quotes like PF1001" or "PF1001
-            # Special bypass for complex strings containing multiple colons like "arn:aws:s3:::aws"
-            if clean_value and not clean_value.replace('.', '', 1).isdigit() and clean_value not in ['true', 'false', 'null']:
+            if clean_value and clean_value not in ['true', 'false', 'null'] and not clean_value.replace('.', '', 1).isdigit():
                 if not clean_value.startswith(('{', '[')):
                     starts_with_quote = clean_value.startswith('"')
                     ends_with_quote = clean_value.endswith('"')
@@ -103,7 +99,6 @@ def validate_json_file(file_path):
 
         # Check 3: Universal Missing Commas Check (Comment Aware)
         if line_no < len(cleaned_lines):
-            # Evaluate the next non-empty line context
             next_line_idx = line_no
             next_line_str = ""
             while next_line_idx < len(cleaned_lines):
@@ -113,7 +108,6 @@ def validate_json_file(file_path):
                 next_line_idx += 1
                 
             if next_line_str:
-                # Case A: Handle missing commas between JSON blocks
                 if line_str.endswith('}'):
                     if next_line_str.startswith('{') or next_line_str.startswith('"'):
                         all_errors.append({
@@ -122,7 +116,6 @@ def validate_json_file(file_path):
                             "line": line_no,
                             "column": len(line)
                         })
-                # Case B: Handle missing commas between list elements / standalone strings
                 elif line_str.endswith('"'):
                     if next_line_str.startswith('"'):
                         all_errors.append({
@@ -160,7 +153,6 @@ validate_json_file(filepath3)
 
 # 5. Final Report Generation & TeamCity Build Control Logic
 if all_errors:
-    # ANSI Escape Codes for Dark Blue Output Colorization (\033[94m = Bright/Dark Blue)
     BLUE_COLOR  = "\033[94m"
     RESET_COLOR = "\033[0m"
     
