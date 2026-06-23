@@ -3,23 +3,23 @@ import json
 import sys
 from pathlib import Path
 
-
-
+# 1. Parse TeamCity Environment Parameters passed from command line
 env = sys.argv[1]
 tenantcode = sys.argv[2]
 workdir = sys.argv[3]
 
-# 2. Define absolute paths for validation targets
+# 2. Define absolute paths for validation targets dynamically based on environment
 filepath1 = f"{workdir}/config/apps/{env}/{tenantcode}"
 filepath2 = f"{workdir}/config/tenants/{env}/{tenantcode}/tenant.conf"
 filepath3 = f"{workdir}/portfolios/{env}/portfolios.conf"
 
+# Global array to collect all structural and syntax errors across files
 all_errors = []
 
 def validate_json_file(file_path): 
     path = Path(file_path)
     
-    # 3. File Handling and Safety Checks
+    # 3. File Handling, Existence, and Safety Checks
     if not path.exists():
         all_errors.append({
             "file": str(file_path),
@@ -32,7 +32,7 @@ def validate_json_file(file_path):
     if path.is_dir():
         return
 
-    # 4. Custom Line-by-Line Checker to Detect Multiple Errors
+    # 4. Custom Line-by-Line Checker to Detect Multiple Syntax & Structural Errors
     with open(path, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
@@ -42,7 +42,7 @@ def validate_json_file(file_path):
     for line_no, line in enumerate(lines, start=1):
         line_str = line.strip()
         
-        # Skip empty lines
+        # Skip empty lines to prevent false missing delimiter errors
         if not line_str:
             continue
 
@@ -56,9 +56,9 @@ def validate_json_file(file_path):
             key = parts[0].strip()
             value = parts[1].strip()
             
-            # If Key lacks double quotes
+            # Validation: If Key lacks enclosing double quotes
             if key and not (key.startswith('"') and key.endswith('"')):
-                if not key.startswith('{'):  # Exclude opening braces
+                if not key.startswith('{'):  # Exclude raw block opening braces
                     all_errors.append({
                         "file": str(file_path),
                         "error": f"Invalid Key format (Missing double quotes around key: {key})",
@@ -66,33 +66,42 @@ def validate_json_file(file_path):
                         "column": 1
                     })
             
-            # If Value is a string but misses closing quotes or terminal delimiters
+            # Validation: If Value is a string but misses closing quotes or terminal delimiters
             if value.startswith('"') and not (value.endswith('"') or value.endswith('",') or value.endswith('"}') or value.endswith('"]')):
                 all_errors.append({
+                    "file": str(file_path),
                     "file": str(file_path),
                     "error": "Unterminated string constant or invalid delimiter in value",
                     "line": line_no,
                     "column": len(line)
                 })
 
-        # Check 3: Missing Commas
-        # If the line contains a value, and the next line introduces a new key but this line misses a comma
+        # Check 3: Missing Commas between sibling fields/objects
         if line_no < len(lines):
-            next_line_str = lines[line_no].strip()
+            # Evaluate the next non-empty line context
+            next_line_idx = line_no
+            next_line_str = ""
+            while next_line_idx < len(lines):
+                if lines[next_line_idx].strip():
+                    next_line_str = lines[next_line_idx].strip()
+                    break
+                next_line_idx += 1
+                
+            # If the next line introduces a new key or structural block, verify terminal comma on current line
             if next_line_str and (next_line_str.startswith('"') or next_line_str.startswith('{')):
                 if not (line_str.endswith(',') or line_str.endswith('{') or line_str.endswith('[') or line_str.endswith('}') or line_str.endswith(']')):
                     all_errors.append({
                         "file": str(file_path),
-                        "error": "Missing comma (,) at the end of this line",
+                        "error": "Missing comma (,) or invalid structure block separator at the end of this line",
                         "line": line_no,
                         "column": len(line)
                     })
 
-    # Check 4: Unclosed Braces or Brackets at EOF
+    # Check 4: Unclosed Braces or Brackets at End Of File (EOF)
     if open_braces != 0:
         all_errors.append({
             "file": str(file_path),
-            "error": f"Mismatched curly braces {{}}. Open count remaining: {abs(open_braces)}",
+            "error": f"Mismatched curly braces {{}}. Open count remaining: {abs(open_braces)} (Check missing structural brackets)",
             "line": len(lines),
             "column": "End of file"
         })
@@ -104,45 +113,48 @@ def validate_json_file(file_path):
             "column": "End of file"
         })
 
-# --- Main Execution --- 
+# --- Main Runtime Execution Pipeline --- 
+# Scan app configs folder recursively if it points to a directory structure
 path1 = Path(filepath1)
 if path1.exists() and path1.is_dir():
     for file in path1.iterdir():
         validate_json_file(file)
 
+# Explicitly validate critical platform environment configuration targets
 validate_json_file(filepath2)
 validate_json_file(filepath3)
 
 
 # 5. Final Report Generation & TeamCity Build Control Logic
 if all_errors:
- 
+    # ANSI Escape Codes for Output Colorization (\033[91m = Bright Red, \033[0m = Reset)
     RED_COLOR   = "\033[91m"
     RESET_COLOR = "\033[0m"
-    # Print the primary header statement
-    print(f"\n{RED_COLOR}Validation Report - Found {len(all_errors)} errors{RESET_COLOR}")
+    
+    # Print the primary header statement in red to draw developer attention in build logs
+    print(f"\n{RED_COLOR}🛑 Validation Report - Found {len(all_errors)} errors{RESET_COLOR}")
     
     # Define table column widths: File, Line, Column, Error Message
-    # Column width is configured to 12 to cleanly contain "End of file" without overflowing layout blocks
+    # Column width is configured to 12 to cleanly contain "End of file" metadata string
     col_widths = [50, 6, 12, 65]
     row_format = "│ {{:<{}}} │ {{:<{}}} │ {{:<{}}} │ {{:<{}}} │".format(*col_widths)
     
-    # Generate static grid lines for text-based tables
+    # Generate static clean grid borders for the text-based summary table
     top_border    = "┌─" + "─" * col_widths[0] + "─┬─" + "─" * col_widths[1] + "─┬─" + "─" * col_widths[2] + "─┬─" + "─" * col_widths[3] + "─┐"
     header_border = "├─" + "─" * col_widths[0] + "─┼─" + "─" * col_widths[1] + "─┼─" + "─" * col_widths[2] + "─┼─" + "─" * col_widths[3] + "─┤"
     bottom_border = "└─" + "─" * col_widths[0] + "─┴─" + "─" * col_widths[1] + "─┴─" + "─" * col_widths[2] + "─┴─" + "─" * col_widths[3] + "─┘"
     
-    # Print Table Header
+    # Print formatted Table Header block
     print(top_border)
     print(row_format.format("File Path", "Line", "Column", "Error Description"))
     print(header_border)
     
-    # Print Table Rows dynamically
+    # Print Table Rows dynamically while truncating extremely long agent file paths
     for err in all_errors:
-        # Strip TeamCity's local agent path prefix to compute a clean repository path
+        # Strip TeamCity's local worker agent workspace path prefix to compute a clean relative repo path
         clean_path = os.path.relpath(err['file'], start=workdir)
         
-        # Truncate clean file path from the left only if it exceeds 50 characters
+        # Truncate clean file path from the left with ellipsis only if it exceeds layout specifications
         if len(clean_path) > col_widths[0]:
             clean_path = "..." + clean_path[-(col_widths[0] - 3):]
             
@@ -155,10 +167,10 @@ if all_errors:
         
     print(bottom_border)
     
-    print("\n Result: JSON Validation Failed. Failing the TeamCity build!")
+    print("\n Result: JSON Validation Failed. Please review the above errors and fix them before proceeding.")
     sys.stdout.flush()
-    sys.exit(1)  # Signal exit code 1 to explicitly fail the execution pipeline step
+    sys.exit(1)  # Forcefully crash the execution pipeline step to block bad artifact deployments
 
 else:
-    print("\n Result: All JSON files are perfectly valid! ")
-    sys.exit(0)  # Signal exit code 0 for a successful step completion
+    print("\n Result: All JSON configuration targets are perfectly valid!")
+    sys.exit(0)  # Signal perfect execution success status to TeamCity agent engine
