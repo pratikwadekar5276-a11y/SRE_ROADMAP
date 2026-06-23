@@ -50,7 +50,7 @@ def validate_json_file(file_path):
         open_braces += line_str.count('{') - line_str.count('}')
         open_brackets += line_str.count('[') - line_str.count(']')
 
-        # Check 2: Missing Quotes, Colons or Malformed Key-Value Pairs (FIXED FOR MALFORMED STRINGS)
+        # Check 2: Missing Quotes, Colons or Malformed Key-Value Pairs (UPDATED FOR PORTFOLIO EXCLUSION)
         if ":" in line_str:
             parts = line_str.split(":", 1)
             key = parts[0].strip()
@@ -61,7 +61,11 @@ def validate_json_file(file_path):
             
             # Validation A: If Key lacks enclosing double quotes
             if key and not (key.startswith('"') and key.endswith('"')):
-                if not key.startswith('{'):  # Exclude raw block opening braces
+                # EXCLUSION FOR PORTFOLIO FILE: Allow unquoted keys with hyphens only in portfolios.conf
+                is_portfolio_file = "portfolios.conf" in str(file_path)
+                is_valid_portfolio_key = is_portfolio_file and key.replace('-', '').isalnum()
+                
+                if not key.startswith('{') and not is_valid_portfolio_key:
                     all_errors.append({
                         "file": str(file_path),
                         "error": f"Invalid Key format (Missing double quotes around key: {key})",
@@ -145,7 +149,7 @@ if all_errors:
     BLUE_COLOR  = "\033[94m"
     RESET_COLOR = "\033[0m"
     
-    print(f"\n{BLUE_COLOR}Validation Report - Found {len(all_errors)} errors{RESET_COLOR}")
+    print(f"\n{BLUE_COLOR}🔹 Validation Report - Found {len(all_errors)} errors{RESET_COLOR}")
     
     col_widths = [50, 6, 12, 65]
     row_format = "│ {{:<{}}} │ {{:<{}}} │ {{:<{}}} │ {{:<{}}} │".format(*col_widths)
