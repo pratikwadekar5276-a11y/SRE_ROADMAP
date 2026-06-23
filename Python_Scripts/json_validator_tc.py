@@ -50,13 +50,16 @@ def validate_json_file(file_path):
         open_braces += line_str.count('{') - line_str.count('}')
         open_brackets += line_str.count('[') - line_str.count(']')
 
-        # Check 2: Missing Quotes or Colons in Key-Value Pairs
+        # Check 2: Missing Quotes, Colons or Malformed Key-Value Pairs (FIXED FOR MALFORMED STRINGS)
         if ":" in line_str:
             parts = line_str.split(":", 1)
             key = parts[0].strip()
             value = parts[1].strip()
             
-            # Validation: If Key lacks enclosing double quotes
+            # Clean trailing commas or brackets from value for validation stability
+            clean_value = value.rstrip(',}]')
+            
+            # Validation A: If Key lacks enclosing double quotes
             if key and not (key.startswith('"') and key.endswith('"')):
                 if not key.startswith('{'):  # Exclude raw block opening braces
                     all_errors.append({
@@ -66,16 +69,20 @@ def validate_json_file(file_path):
                         "column": 1
                     })
             
-            # Validation: If Value is a string but misses closing quotes or terminal delimiters
-            if value.startswith('"') and not (value.endswith('"') or value.endswith('",') or value.endswith('"}') or value.endswith('"]')):
-                all_errors.append({
-                    "file": str(file_path),
-                    "error": "Unterminated string constant or invalid delimiter in value",
-                    "line": line_no,
-                    "column": len(line)
-                })
+            # Validation B: Catch mismatched quotes like PF1001" or "PF1001
+            if clean_value and not clean_value.replace('.', '', 1).isdigit() and clean_value not in ['true', 'false', 'null'] and not clean_value.startswith(('{', '[')):
+                starts_with_quote = clean_value.startswith('"')
+                ends_with_quote = clean_value.endswith('"')
+                
+                if starts_with_quote != ends_with_quote:  # Mismatched quotes logic
+                    all_errors.append({
+                        "file": str(file_path),
+                        "error": f"Malformed string value (Mismatched or missing double quotes around value: {value})",
+                        "line": line_no,
+                        "column": len(line)
+                    })
 
-        # Check 3: Universal Missing Commas Check (FIXED FOR STRING LISTS & BLOCKS)
+        # Check 3: Universal Missing Commas Check (Fixed for String Lists & Blocks)
         if line_no < len(lines):
             # Evaluate the next non-empty line context
             next_line_idx = line_no
