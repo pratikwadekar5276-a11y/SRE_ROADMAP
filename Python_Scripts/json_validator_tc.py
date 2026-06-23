@@ -70,13 +70,19 @@ def validate_json_file(file_path):
         # CRITICAL REUSABLE CHECKS
         is_standalone_arn = line_str.startswith('"arn') or line_str.startswith('arn') or "arn:aws" in line_str
 
-        # Check 2: Missing Quotes, Colons or Malformed Key-Value Pairs
-        if ":" in line_str and not is_standalone_arn:
-            parts = line_str.split(":", 1)
+        # Check 2: Missing Quotes, Colons/Equals or Malformed Key-Value Pairs
+        has_separator = ":" in line_str or "=" in line_str
+        
+        if has_separator and not is_standalone_arn:
+            if ":" in line_str and "=" in line_str:
+                separator = ":" if line_str.find(":") < line_str.find("=") else "="
+            else:
+                separator = ":" if ":" in line_str else "="
+                
+            parts = line_str.split(separator, 1)
             key = parts[0].strip()
             value = parts[1].strip()
             
-            # Clean trailing commas or brackets from value
             clean_value = value.rstrip(',}]').strip()
             
             # Validation A: If Key lacks enclosing double quotes
@@ -92,7 +98,7 @@ def validate_json_file(file_path):
                         "column": 1
                     })
             
-            # Validation B: Catch mismatched quotes (With Special Character Exception)
+            # Validation B: Catch mismatched quotes (With Advanced Dynamic Expression Support)
             if clean_value and clean_value not in ['true', 'false', 'null'] and not clean_value.replace('.', '', 1).isdigit():
                 if not clean_value.startswith(('{', '[')):
                     starts_with_special = clean_value.startswith(('$', '@', '#', '%', '&', '*', '_', '-'))
@@ -117,14 +123,13 @@ def validate_json_file(file_path):
                                 "column": len(line)
                             })
 
-        # Check 3: Universal Missing Commas Check (Perfect Lookahead & String-End Aware)
+        # Check 3: Universal Missing Commas Check (Perfect End Of File & Block Aware)
         if line_no == total_clean_lines:
             continue
 
         next_line_str = cleaned_lines[line_no]['text'].strip()
         is_next_closing = next_line_str.startswith(('}', ']'))
         
-        # If the next line is closing a block, current line NEVER needs a comma
         if is_next_closing:
             continue
 
