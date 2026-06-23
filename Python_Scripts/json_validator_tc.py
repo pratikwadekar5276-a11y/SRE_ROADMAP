@@ -70,72 +70,77 @@ def validate_json_file(file_path):
         open_braces += line_str.count('{') - line_str.count('}')
         open_brackets += line_str.count('[') - line_str.count(']')
 
-        # CRITICAL BYPASS DETECTION
+        # 🔹 UNIVERSAL SPECIAL BYPASS 🔹
         is_arn = "arn:" in line_str.lower()
-        is_csp = "content-security-policy" in line_str.lower()
-        
+        is_pure_url = "://" in line_str and not ("=" in line_str) and (line_str.find(":") > line_str.find("://") if ":" in line_str else True)
+
         # Check 2: Missing Quotes, Colons/Equals or Malformed Key-Value Pairs
         has_separator = ":" in line_str or "=" in line_str
         
-        # ARN ला सरळ की-व्हॅल्यू चेकमधून बायपास करणे
-        if has_separator and not is_arn:
-            # 🎯 स्मार्ट स्प्लिट: जर '=' असेल तर त्यानेच तोडा, नसेल तर पहिल्या कोलनवर (Outside URL) तोडा
-            if "=" in line_str:
-                separator = "="
-            else:
-                separator = ":"
+        # जर ती सरळ अखंड URL/ARN असेल, तर तिला की-व्हॅल्यू स्प्लिटिंगमध्ये पाठवायचंच नाही!
+        if has_separator and not is_arn and not is_pure_url:
+            separator = "=" if "=" in line_str else ":"
+            
+            # जर कोलन वापरत असू आणि तो कोलन एखाद्या URL च्या आतला असेल (उदा. "https://"), तर स्प्लिट करू नका
+            if separator == ":" and "://" in line_str:
+                # जर कोलन चिन्हाच्या आधी डबल कोट बंद होत नसेल, तर तो व्हॅल्यूचा भाग आहे, की चा नाही
+                first_colon_idx = line_str.find(":")
+                before_colon = line_str[:first_colon_idx].strip()
+                if not (before_colon.startswith('"') and before_colon.endswith('"')):
+                    # हा खरा की-व्हॅल्यू सेपरेटर नाहीये, स्किप करा!
+                    has_separator = False
+            
+            if has_separator:
+                parts = line_str.split(separator, 1)
+                key = parts[0].strip()
+                value = parts[1].strip()
                 
-            # split(separator, 1) चा अर्थ फक्त पहिल्याच मॅचवर तुकडा पडेल, URL सुरक्षित राहील!
-            parts = line_str.split(separator, 1)
-            key = parts[0].strip()
-            value = parts[1].strip()
-            
-            clean_value = value.rstrip(',}]').strip()
-            clean_key = key.replace('"', '').strip()
-            
-            # Validation A: If Key lacks enclosing double quotes
-            if key and not (key.startswith('"') and key.endswith('"')):
-                is_portfolio_file = "portfolios.conf" in str(file_path)
-                is_valid_portfolio_key = is_portfolio_file and key.replace('-', '').isalnum()
+                clean_value = value.rstrip(',}]').strip()
+                clean_key = key.replace('"', '').strip()
                 
-                if not key.startswith('{') and not is_valid_portfolio_key:
-                    all_errors.append({
-                        "file": str(file_path),
-                        "error": f"Invalid Key format (Missing double quotes around key: {key})",
-                        "line": real_line_no,
-                        "column": 1
-                    })
-            
-            # Validation B: Catch mismatched quotes
-            if clean_value and clean_value not in ['true', 'false', 'null'] and not clean_value.replace('.', '', 1).isdigit():
-                if not clean_value.startswith(('{', '[')):
+                # Validation A: If Key lacks enclosing double quotes
+                if key and not (key.startswith('"') and key.endswith('"')):
+                    is_portfolio_file = "portfolios.conf" in str(file_path)
+                    is_valid_portfolio_key = is_portfolio_file and key.replace('-', '').isalnum()
                     
-                    # CSP साठी स्पेशल बायपास
-                    if clean_key == "Content-Security-Policy":
-                        continue
-
-                    starts_with_special = clean_value.startswith(('$', '@', '#', '%', '&', '*', '_', '-'))
-                    
-                    if starts_with_special:
-                        if clean_value.count('"') % 2 != 0:
-                            all_errors.append({
-                                "file": str(file_path),
-                                "error": f"Malformed dynamic value expression (Mismatched quotes in special expression: {value})",
-                                "line": real_line_no,
-                                "column": len(line)
-                            })
-                    else:
-                        starts_with_quote = clean_value.startswith('"')
-                        ends_with_quote = clean_value.endswith('"')
+                    if not key.startswith('{') and not is_valid_portfolio_key:
+                        all_errors.append({
+                            "file": str(file_path),
+                            "error": f"Invalid Key format (Missing double quotes around key: {key})",
+                            "line": real_line_no,
+                            "column": 1
+                        })
+                
+                # Validation B: Catch mismatched quotes
+                if clean_value and clean_value not in ['true', 'false', 'null'] and not clean_value.replace('.', '', 1).isdigit():
+                    if not clean_value.startswith(('{', '[')):
                         
-                        if starts_with_quote != ends_with_quote:
-                            if not (line_str.startswith('"') and line_str.rstrip(',').endswith('"')):
+                        # Content-Security-Policy Override
+                        if clean_key == "Content-Security-Policy":
+                            continue
+
+                        starts_with_special = clean_value.startswith(('$', '@', '#', '%', '&', '*', '_', '-'))
+                        
+                        if starts_with_special:
+                            if clean_value.count('"') % 2 != 0:
                                 all_errors.append({
                                     "file": str(file_path),
-                                    "error": f"Malformed string value (Mismatched or missing double quotes around value: {value})",
+                                    "error": f"Malformed dynamic value expression (Mismatched quotes in special expression: {value})",
                                     "line": real_line_no,
                                     "column": len(line)
                                 })
+                        else:
+                            starts_with_quote = clean_value.startswith('"')
+                            ends_with_quote = clean_value.endswith('"')
+                            
+                            if starts_with_quote != ends_with_quote:
+                                if not (line_str.startswith('"') and line_str.rstrip(',').endswith('"')):
+                                    all_errors.append({
+                                        "file": str(file_path),
+                                        "error": f"Malformed string value (Mismatched or missing double quotes around value: {value})",
+                                        "line": real_line_no,
+                                        "column": len(line)
+                                    })
 
         # Check 3: Universal Missing Commas Check (Object Braces, Strings & Arrays Aware)
         if line_no == total_clean_lines:
@@ -157,8 +162,8 @@ def validate_json_file(file_path):
                     "column": len(line)
                 })
         
-        # CASE B: Line ends with string quotes '"' किंवा ती ARN/CSP ची ओळ आहे
-        elif line_str.endswith('"') or line_str.rstrip(',').endswith('"') or is_arn or clean_key == "Content-Security-Policy":
+        # CASE B: Line ends with string quotes '"' किंवा ती ARN / CSP / Pure URL ची ओळ आहे
+        elif line_str.endswith('"') or line_str.rstrip(',').endswith('"') or is_arn or is_pure_url or clean_key == "Content-Security-Policy":
             if not line_str.endswith(','):
                 is_next_field = ":" in next_line_str or "=" in next_line_str
                 is_array_element = next_line_str.startswith('"')
