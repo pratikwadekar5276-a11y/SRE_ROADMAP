@@ -67,8 +67,8 @@ def validate_json_file(file_path):
         open_braces += line_str.count('{') - line_str.count('}')
         open_brackets += line_str.count('[') - line_str.count(']')
 
-        # CRITICAL REUSABLE CHECKS
-        is_standalone_arn = line_str.startswith('"arn') or line_str.startswith('arn') or "arn:aws" in line_str
+        # CRITICAL REUSABLE CHECKS - STRICTLY FOR ARN ONLY
+        is_standalone_arn = "arn:" in line_str.lower()
 
         # Check 2: Missing Quotes, Colons/Equals or Malformed Key-Value Pairs
         has_separator = ":" in line_str or "=" in line_str
@@ -84,6 +84,7 @@ def validate_json_file(file_path):
             value = parts[1].strip()
             
             clean_value = value.rstrip(',}]').strip()
+            clean_key = key.replace('"', '').strip()
             
             # Validation A: If Key lacks enclosing double quotes
             if key and not (key.startswith('"') and key.endswith('"')):
@@ -101,6 +102,22 @@ def validate_json_file(file_path):
             # Validation B: Catch mismatched quotes (With Advanced Dynamic Expression Support)
             if clean_value and clean_value not in ['true', 'false', 'null'] and not clean_value.replace('.', '', 1).isdigit():
                 if not clean_value.startswith(('{', '[')):
+                    
+                    # 🔹 CRITICAL SPECIFIC OVERRIDE FOR Content-Security-Policy 🔹
+                    if clean_key == "Content-Security-Policy":
+                        starts_with_quote = clean_value.startswith('"')
+                        ends_with_quote = clean_value.endswith('"')
+                        if not (starts_with_quote and ends_with_quote):
+                            all_errors.append({
+                                "file": str(file_path),
+                                "error": f"Malformed Content-Security-Policy format (Must start and end perfectly with double quotes)",
+                                "line": real_line_no,
+                                "column": len(line)
+                            })
+                        # Content-Security-Policy चा चेक इथेच संपला, मधला पार्ट पूर्ण स्किप!
+                        continue
+
+                    # Regular logic for other fields
                     starts_with_special = clean_value.startswith(('$', '@', '#', '%', '&', '*', '_', '-'))
                     
                     if starts_with_special:
@@ -123,7 +140,7 @@ def validate_json_file(file_path):
                                 "column": len(line)
                             })
 
-        # Check 3: Universal Missing Commas Check (Strict Field-Separator Aware)
+        # Check 3: Universal Missing Commas Check (Object Braces & Strings Aware)
         if line_no == total_clean_lines:
             continue
 
@@ -133,16 +150,18 @@ def validate_json_file(file_path):
         if is_next_closing:
             continue
 
+        # CASE A: Line ends with closing brace '}'
         if line_str.endswith('}'):
-            if next_line_str.startswith('{') or next_line_str.startswith('"'):
+            if not line_str.endswith(',') and (":" in next_line_str or "=" in next_line_str or next_line_str.startswith('{')):
                 all_errors.append({
                     "file": str(file_path),
-                    "error": "Missing comma (,) after closing brace '}' before the next block starts",
+                    "error": "Missing comma (,) after closing brace '}' before the next field/block starts",
                     "line": real_line_no,
                     "column": len(line)
                 })
+        
+        # CASE B: Line ends with string quotes '"'
         elif line_str.endswith('"') or line_str.rstrip(',').endswith('"'):
-            # Only complain about a missing comma if the next line is genuinely a new key declaration (has : or =)
             if not line_str.endswith(',') and (":" in next_line_str or "=" in next_line_str):
                 if not is_standalone_arn:
                     all_errors.append({
