@@ -44,22 +44,28 @@ def validate_json_file(file_path):
     for idx, line in enumerate(lines, start=1):
         raw_line = line.strip()
         
-        if raw_line.startswith("//"):
+        # If the line directly starts with // or #, it is a pure comment line
+        if raw_line.startswith("//") or raw_line.startswith("#"):
             continue
             
+        # SMART BYPASS: If the line contains multiple URLs or JAVA_TOOL_OPTIONS, skip comment splitting entirely
+        # This prevents breaking valid data lines prematurely.
         if raw_line.count("://") > 1 or "java_tool" in raw_line.lower():
             cleaned_lines.append({"line_no": idx, "text": raw_line, "raw": line, "is_immune": True})
             continue
 
+        # Smart inline comment filtering for other standard lines
         if "//" in raw_line:
-            if "://" not in raw_line:
-                clean_text = line.split("//", 1)[0].strip()
+            first_comment_idx = raw_line.find("//")
+            # If '//' is found inside double quotes (odd count of quotes before it), do not treat it as a comment!
+            if "://" in raw_line or raw_line[:first_comment_idx].count('"') % 2 != 0:
+                clean_text = raw_line
             else:
                 parts_comment = line.split("//")
                 if len(parts_comment) > 2 and parts_comment[0].endswith(":"):
                     clean_text = (parts_comment[0] + "//" + parts_comment[1]).strip()
                 else:
-                    clean_text = raw_line
+                    clean_text = line.split("//", 1)[0].strip()
         else:
             clean_text = raw_line
             
@@ -97,6 +103,7 @@ def validate_json_file(file_path):
         has_separator = ":" in line_str or "=" in line_str
         should_bypass_quotes = is_arn or is_pure_url or is_apig or is_multiple_urls or is_java_env
         
+        # If any bypass rule is triggered (Multiple URLs, Java Environment etc.), skip Check 2 quote validation completely
         if has_separator and not should_bypass_quotes:
             if "=" in line_str:
                 first_equal_idx = line_str.find("=")
@@ -156,8 +163,8 @@ def validate_json_file(file_path):
                             starts_with_quote = clean_value.startswith('"')
                             ends_with_quote = clean_value.endswith('"') or clean_value.rstrip(',"').endswith('=')
                             
-                            # 🎯 नवीन बदल: जर संपूर्ण ओळ कोट्सने सुरक्षित असेल (उदा. "key" = "value"), 
-                            # तर मधे कुठलाही लेटर किंवा सिम्बॉल आला तरी त्याला सरळ valid माना!
+                            # RELAXED CHECK: If the entire line starts and ends with proper quotes, consider it valid
+                            # regardless of mixed internal punctuation/characters (like inline colons or commas).
                             is_entire_line_quoted = line_str.startswith('"') and line_str.rstrip(',').endswith('"')
                             
                             if starts_with_quote != ends_with_quote and not clean_value.endswith('=') and not is_entire_line_quoted:
@@ -187,6 +194,7 @@ def validate_json_file(file_path):
                     "column": len(line)
                 })
         
+        # Only validate the trailing comma structure for skipped/immunized complex lines
         elif line_str.endswith('"') or line_str.rstrip(',').endswith('"') or line_str.rstrip(',"').endswith('=') or should_bypass_quotes or clean_key == "Content-Security-Policy":
             if not line_str.endswith(','):
                 is_next_field = ":" in next_line_str or "=" in next_line_str
