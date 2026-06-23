@@ -72,24 +72,18 @@ def validate_json_file(file_path):
 
         # CRITICAL REUSABLE CHECKS
         is_standalone_arn = "arn:" in line_str.lower()
-        is_url_line = "https:" in line_str.lower() or "http:" in line_str.lower() or "s3://" in line_str.lower()
+        
+        # 🔹 UNIVERSAL PROTOCOL CHECK (Handles https://, s3://, pratik:// etc.) 🔹
+        is_url_line = "://" in line_str
 
         # Check 2: Missing Quotes, Colons/Equals or Malformed Key-Value Pairs
-        # If it's a direct URL element inside an array, don't treat it as a key-value split unless it has a real assignment
         has_real_separator = (":" in line_str and not is_url_line) or "=" in line_str or (":" in line_str and line_str.count(":") > 1 and "content-security-policy" not in line_str.lower())
         
         if (has_real_separator or ":" in line_str or "=" in line_str) and not is_standalone_arn:
-            # Determine the real structural separator
             if "=" in line_str:
                 separator = "="
             elif ":" in line_str:
-                # If it's a URL like "url" : "https://abc.com", find the first colon outside the URL protocol
-                first_colon = line_str.find(":")
-                first_quote = line_str.find('"')
-                second_quote = line_str.find('"', first_quote + 1) if first_quote != -1 else -1
-                
-                # If colon is inside the first key's quotes, or part of http:, adjust smart split
-                if "https:" in line_str or "http:" in line_str:
+                if is_url_line:
                     separator = "=" if "=" in line_str else ":"
                 else:
                     separator = ":"
@@ -121,11 +115,11 @@ def validate_json_file(file_path):
                 if clean_value and clean_value not in ['true', 'false', 'null'] and not clean_value.replace('.', '', 1).isdigit():
                     if not clean_value.startswith(('{', '[')):
                         
-                        # 🔹 CRITICAL SPECIFIC OVERRIDE FOR Content-Security-Policy 🔹
+                        # CRITICAL SPECIFIC OVERRIDE FOR Content-Security-Policy
                         if clean_key == "Content-Security-Policy":
                             continue
 
-                        # Skip validation if the entire value line is just a properly enclosed URL string or array element
+                        # Skip validation if the entire value line is just a properly enclosed URL string
                         if is_url_line and clean_value.startswith('"') and clean_value.endswith('"'):
                             continue
 
@@ -144,7 +138,6 @@ def validate_json_file(file_path):
                             ends_with_quote = clean_value.endswith('"')
                             
                             if starts_with_quote != ends_with_quote:
-                                # Safe guard for pure array strings containing URLs
                                 if not (line_str.startswith('"') and line_str.rstrip(',').endswith('"')):
                                     all_errors.append({
                                         "file": str(file_path),
@@ -178,8 +171,8 @@ def validate_json_file(file_path):
             if not line_str.endswith(','):
                 is_next_field = ":" in next_line_str or "=" in next_line_str
                 
-                # Smart Array Element Check: Handles URLs safely by validating line context
-                is_array_element = next_line_str.startswith('"') and (is_url_line or ("=" not in line_str and (line_str.count(":") <= 1 or "http" in line_str)))
+                # Smart Array Element Check: Handles any custom protocols safely using '://' detection
+                is_array_element = next_line_str.startswith('"') and (is_url_line or ("=" not in line_str and (line_str.count(":") <= 1 or "://" in line_str)))
                 
                 if is_next_field or is_array_element:
                     if not is_standalone_arn:
