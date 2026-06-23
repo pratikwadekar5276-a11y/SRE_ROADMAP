@@ -62,6 +62,9 @@ def validate_json_file(file_path):
         line_str = line_data['text']
         real_line_no = line_data['line_no']
         line = line_data['raw']
+        
+        # 🔹 CRITICAL FIX: Initialize clean_key to avoid UnboundLocalError 🔹
+        clean_key = ""
 
         # Check 1: Bracket Matching and Structural Integrity Tracking
         open_braces += line_str.count('{') - line_str.count('}')
@@ -104,7 +107,6 @@ def validate_json_file(file_path):
                 if not clean_value.startswith(('{', '[')):
                     
                     # 🔹 CRITICAL SPECIFIC OVERRIDE FOR Content-Security-Policy 🔹
-                    # कोट्स असोत वा नसोत, CSP ची व्हॅल्यू डायरेक्ट पास करून मधील सगळा पसारा स्किप करणे
                     if clean_key == "Content-Security-Policy":
                         continue
 
