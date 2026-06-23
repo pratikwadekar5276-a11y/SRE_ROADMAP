@@ -90,7 +90,7 @@ def validate_json_file(file_path):
         is_apig = "apig." in line_str.lower()
         is_java_env = "java_tool" in line_str.lower() or is_immune
         is_multiple_urls = line_str.count("://") > 1 or is_immune
-        is_dynamic_template = "${" in line_str  # 🎯 Handles mixed quoted template blocks safely
+        is_dynamic_template = "${" in line_str  # Handles mixed quoted template blocks safely
         
         is_pure_url = False
         if "://" in line_str and "=" not in line_str and not is_multiple_urls:
@@ -192,16 +192,17 @@ def validate_json_file(file_path):
                     "column": len(line)
                 })
         
-        # Trailing comma safety check remains functional for dynamic blocks
-        elif line_str.endswith('"') or line_str.rstrip(',').endswith('"') or line_str.rstrip(',"').endswith('=') or should_bypass_quotes or clean_key == "Content-Security-Policy":
+        # Trailing comma safety check for string, closed brace objects, and inline bypassed blocks
+        elif line_str.endswith('"') or line_str.rstrip(',').endswith('"') or line_str.endswith('}') or line_str.rstrip(',').endswith('}') or line_str.rstrip(',"').endswith('=') or should_bypass_quotes or clean_key == "Content-Security-Policy":
             if not line_str.endswith(','):
                 is_next_field = ":" in next_line_str or "=" in next_line_str
                 is_array_element = next_line_str.startswith('"')
+                is_next_block = next_line_str.startswith('{')  # 🎯 Fixed: Catch cases where the next line starts a new block
                 
-                if is_next_field or is_array_element:
+                if is_next_field or is_array_element or is_next_block:
                     all_errors.append({
                         "file": str(file_path),
-                        "error": f"Missing comma (,) after string/ARN/URL/APIG/JAVA value before the next field or element starts",
+                        "error": f"Missing comma (,) after value/brace before the next field, block or element starts",
                         "line": real_line_no,
                         "column": len(line)
                     })
