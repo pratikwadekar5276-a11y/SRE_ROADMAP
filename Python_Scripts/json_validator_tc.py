@@ -117,15 +117,14 @@ def validate_json_file(file_path):
                                 "column": len(line)
                             })
 
-        # Check 3: Universal Missing Commas Check (Perfect End Of File & Block Aware)
-        # CRITICAL FIX: If this is the absolute last data line of the file, do not check for comma!
+        # Check 3: Universal Missing Commas Check (Perfect Lookahead & String-End Aware)
         if line_no == total_clean_lines:
             continue
 
         next_line_str = cleaned_lines[line_no]['text'].strip()
         is_next_closing = next_line_str.startswith(('}', ']'))
         
-        # ABSOLUTE BYPASS FOR LAST LINE OF ANY INTERNAL BLOCK OR ARRAY
+        # If the next line is closing a block, current line NEVER needs a comma
         if is_next_closing:
             continue
 
@@ -137,8 +136,8 @@ def validate_json_file(file_path):
                     "line": real_line_no,
                     "column": len(line)
                 })
-        elif line_str.endswith('"') or (("arn:aws" in line_str) and line_str.rstrip(',').endswith('"')) or line_str.rstrip(',').endswith('"'):
-            if next_line_str.startswith('"') and not line_str.endswith(','):
+        elif line_str.endswith('"') or line_str.rstrip(',').endswith('"'):
+            if not line_str.endswith(',') and next_line_str.startswith('"'):
                 if not is_standalone_arn:
                     all_errors.append({
                         "file": str(file_path),
