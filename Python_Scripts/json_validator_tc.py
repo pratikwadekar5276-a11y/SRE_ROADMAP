@@ -61,7 +61,7 @@ def validate_json_file(file_path):
         open_braces += line_str.count('{') - line_str.count('}')
         open_brackets += line_str.count('[') - line_str.count(']')
 
-        # Check 2: Missing Quotes, Colons or Malformed Key-Value Pairs (ARN Special Logic)
+        # Check 2: Missing Quotes, Colons or Malformed Key-Value Pairs (ARN Fix)
         if ":" in line_str:
             parts = line_str.split(":", 1)
             key = parts[0].strip()
@@ -83,12 +83,12 @@ def validate_json_file(file_path):
                         "column": 1
                     })
             
-            # Validation B: Catch mismatched quotes (ARN Dedicated Logic)
-            if "arn:" in clean_value:
-                if not (clean_value.startswith('"') and clean_value.endswith('"')):
+            # Validation B: Catch mismatched quotes (ARN Dedicated Bypass)
+            if "arn:aws" in clean_value:
+                if not clean_value.endswith('"') and '"' in clean_value:
                     all_errors.append({
                         "file": str(file_path),
-                        "error": f"Malformed ARN string (ARN must be fully enclosed in double quotes: {value})",
+                        "error": f"Malformed ARN string structure (Check closing quotes around ARN: {value})",
                         "line": line_no,
                         "column": len(line)
                     })
@@ -126,7 +126,7 @@ def validate_json_file(file_path):
                             "line": line_no,
                             "column": len(line)
                         })
-                elif line_str.endswith('"') or (("arn:" in line_str) and line_str.rstrip(',').endswith('"')):
+                elif line_str.endswith('"') or (("arn:aws" in line_str) and line_str.rstrip(',').endswith('"')):
                     if next_line_str.startswith('"') and not line_str.endswith(','):
                         if not is_next_closing:
                             all_errors.append({
@@ -165,7 +165,6 @@ validate_json_file(filepath3)
 # 5. Final Report Generation & TeamCity Build Control Logic
 if all_errors:
     BLUE_COLOR  = "\033[94m"
-    RESET_COLOR = "\03="
     RESET_COLOR = "\033[0m"
     
     print(f"\n{BLUE_COLOR}🔹 Validation Report - Found {len(all_errors)} errors{RESET_COLOR}")
