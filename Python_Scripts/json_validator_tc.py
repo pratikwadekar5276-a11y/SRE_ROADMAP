@@ -39,10 +39,23 @@ def validate_json_file(file_path):
     open_braces = 0
     open_brackets = 0
 
-    for line_no, line in enumerate(lines, start=1):
+    # First pass: Clean lines from comments to accurately track structural lookahead
+    cleaned_lines = []
+    for line in lines:
+        raw_line = line.strip()
+        # If line starts with //, treat it as an empty line (ignored)
+        if raw_line.startswith("//"):
+            cleaned_lines.append("")
+        elif "//" in raw_line:
+            # If comment is at the end of a line, strip the comment part out
+            cleaned_lines.append(line.split("//", 1)[0])
+        else:
+            cleaned_lines.append(line)
+
+    for line_no, line in enumerate(cleaned_lines, start=1):
         line_str = line.strip()
         
-        # Skip empty lines to prevent false missing delimiter errors
+        # Skip empty lines or completely commented lines to prevent false errors
         if not line_str:
             continue
 
@@ -50,7 +63,7 @@ def validate_json_file(file_path):
         open_braces += line_str.count('{') - line_str.count('}')
         open_brackets += line_str.count('[') - line_str.count(']')
 
-# Check 2: Missing Quotes, Colons or Malformed Key-Value Pairs
+        # Check 2: Missing Quotes, Colons or Malformed Key-Value Pairs (ARN & Comment Aware)
         if ":" in line_str:
             parts = line_str.split(":", 1)
             key = parts[0].strip()
@@ -63,7 +76,6 @@ def validate_json_file(file_path):
             if key and not (key.startswith('"') and key.endswith('"')):
                 # EXCLUSION FOR PORTFOLIO FILE: Allow unquoted keys with hyphens only in portfolios.conf
                 is_portfolio_file = "portfolios.conf" in str(file_path)
-                # Matches keys like 'abc-d', 'portfolio-1', etc.
                 is_valid_portfolio_key = is_portfolio_file and key.replace('-', '').isalnum()
                 
                 if not key.startswith('{') and not is_valid_portfolio_key:
@@ -75,7 +87,7 @@ def validate_json_file(file_path):
                     })
             
             # Validation B: Catch mismatched quotes like PF1001" or "PF1001
-            # Explicitly ensure we skip valid nested block openings like { or [
+            # Special bypass for complex strings containing multiple colons like "arn:aws:s3:::aws"
             if clean_value and not clean_value.replace('.', '', 1).isdigit() and clean_value not in ['true', 'false', 'null']:
                 if not clean_value.startswith(('{', '[')):
                     starts_with_quote = clean_value.startswith('"')
@@ -89,14 +101,14 @@ def validate_json_file(file_path):
                             "column": len(line)
                         })
 
-        # Check 3: Universal Missing Commas Check (Fixed for String Lists & Blocks)
-        if line_no < len(lines):
+        # Check 3: Universal Missing Commas Check (Comment Aware)
+        if line_no < len(cleaned_lines):
             # Evaluate the next non-empty line context
             next_line_idx = line_no
             next_line_str = ""
-            while next_line_idx < len(lines):
-                if lines[next_line_idx].strip():
-                    next_line_str = lines[next_line_idx].strip()
+            while next_line_idx < len(cleaned_lines):
+                if cleaned_lines[next_line_idx].strip():
+                    next_line_str = cleaned_lines[next_line_idx].strip()
                     break
                 next_line_idx += 1
                 
