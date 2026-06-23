@@ -63,75 +63,95 @@ def validate_json_file(file_path):
         real_line_no = line_data['line_no']
         line = line_data['raw']
         
-        # 🔹 CRITICAL FIX: Initialize clean_key to avoid UnboundLocalError 🔹
+        # Initialize clean_key to avoid UnboundLocalError
         clean_key = ""
 
         # Check 1: Bracket Matching and Structural Integrity Tracking
         open_braces += line_str.count('{') - line_str.count('}')
         open_brackets += line_str.count('[') - line_str.count(']')
 
-        # CRITICAL REUSABLE CHECKS - STRICTLY FOR ARN ONLY
+        # CRITICAL REUSABLE CHECKS
         is_standalone_arn = "arn:" in line_str.lower()
+        is_url_line = "https:" in line_str.lower() or "http:" in line_str.lower() or "s3://" in line_str.lower()
 
         # Check 2: Missing Quotes, Colons/Equals or Malformed Key-Value Pairs
-        has_separator = ":" in line_str or "=" in line_str
+        # If it's a direct URL element inside an array, don't treat it as a key-value split unless it has a real assignment
+        has_real_separator = (":" in line_str and not is_url_line) or "=" in line_str or (":" in line_str and line_str.count(":") > 1 and "content-security-policy" not in line_str.lower())
         
-        if has_separator and not is_standalone_arn:
-            if ":" in line_str and "=" in line_str:
-                separator = ":" if line_str.find(":") < line_str.find("=") else "="
+        if (has_real_separator or ":" in line_str or "=" in line_str) and not is_standalone_arn:
+            # Determine the real structural separator
+            if "=" in line_str:
+                separator = "="
+            elif ":" in line_str:
+                # If it's a URL like "url" : "https://abc.com", find the first colon outside the URL protocol
+                first_colon = line_str.find(":")
+                first_quote = line_str.find('"')
+                second_quote = line_str.find('"', first_quote + 1) if first_quote != -1 else -1
+                
+                # If colon is inside the first key's quotes, or part of http:, adjust smart split
+                if "https:" in line_str or "http:" in line_str:
+                    separator = "=" if "=" in line_str else ":"
+                else:
+                    separator = ":"
             else:
-                separator = ":" if ":" in line_str else "="
+                separator = ":"
                 
-            parts = line_str.split(separator, 1)
-            key = parts[0].strip()
-            value = parts[1].strip()
-            
-            clean_value = value.rstrip(',}]').strip()
-            clean_key = key.replace('"', '').strip()
-            
-            # Validation A: If Key lacks enclosing double quotes
-            if key and not (key.startswith('"') and key.endswith('"')):
-                is_portfolio_file = "portfolios.conf" in str(file_path)
-                is_valid_portfolio_key = is_portfolio_file and key.replace('-', '').isalnum()
+            if separator in line_str:
+                parts = line_str.split(separator, 1)
+                key = parts[0].strip()
+                value = parts[1].strip()
                 
-                if not key.startswith('{') and not is_valid_portfolio_key:
-                    all_errors.append({
-                        "file": str(file_path),
-                        "error": f"Invalid Key format (Missing double quotes around key: {key})",
-                        "line": real_line_no,
-                        "column": 1
-                    })
-            
-            # Validation B: Catch mismatched quotes (With Advanced Dynamic Expression Support)
-            if clean_value and clean_value not in ['true', 'false', 'null'] and not clean_value.replace('.', '', 1).isdigit():
-                if not clean_value.startswith(('{', '[')):
+                clean_value = value.rstrip(',}]').strip()
+                clean_key = key.replace('"', '').strip()
+                
+                # Validation A: If Key lacks enclosing double quotes
+                if key and not (key.startswith('"') and key.endswith('"')):
+                    is_portfolio_file = "portfolios.conf" in str(file_path)
+                    is_valid_portfolio_key = is_portfolio_file and key.replace('-', '').isalnum()
                     
-                    # 🔹 CRITICAL SPECIFIC OVERRIDE FOR Content-Security-Policy 🔹
-                    if clean_key == "Content-Security-Policy":
-                        continue
-
-                    # Regular logic for other fields
-                    starts_with_special = clean_value.startswith(('$', '@', '#', '%', '&', '*', '_', '-'))
-                    
-                    if starts_with_special:
-                        if clean_value.count('"') % 2 != 0:
-                            all_errors.append({
-                                "file": str(file_path),
-                                "error": f"Malformed dynamic value expression (Mismatched quotes in special expression: {value})",
-                                "line": real_line_no,
-                                "column": len(line)
-                            })
-                    else:
-                        starts_with_quote = clean_value.startswith('"')
-                        ends_with_quote = clean_value.endswith('"')
+                    if not key.startswith('{') and not is_valid_portfolio_key and not is_url_line:
+                        all_errors.append({
+                            "file": str(file_path),
+                            "error": f"Invalid Key format (Missing double quotes around key: {key})",
+                            "line": real_line_no,
+                            "column": 1
+                        })
+                
+                # Validation B: Catch mismatched quotes
+                if clean_value and clean_value not in ['true', 'false', 'null'] and not clean_value.replace('.', '', 1).isdigit():
+                    if not clean_value.startswith(('{', '[')):
                         
-                        if starts_with_quote != ends_with_quote:
-                            all_errors.append({
-                                "file": str(file_path),
-                                "error": f"Malformed string value (Mismatched or missing double quotes around value: {value})",
-                                "line": real_line_no,
-                                "column": len(line)
-                            })
+                        # 🔹 CRITICAL SPECIFIC OVERRIDE FOR Content-Security-Policy 🔹
+                        if clean_key == "Content-Security-Policy":
+                            continue
+
+                        # Skip validation if the entire value line is just a properly enclosed URL string or array element
+                        if is_url_line and clean_value.startswith('"') and clean_value.endswith('"'):
+                            continue
+
+                        starts_with_special = clean_value.startswith(('$', '@', '#', '%', '&', '*', '_', '-'))
+                        
+                        if starts_with_special:
+                            if clean_value.count('"') % 2 != 0:
+                                all_errors.append({
+                                    "file": str(file_path),
+                                    "error": f"Malformed dynamic value expression (Mismatched quotes in special expression: {value})",
+                                    "line": real_line_no,
+                                    "column": len(line)
+                                })
+                        else:
+                            starts_with_quote = clean_value.startswith('"')
+                            ends_with_quote = clean_value.endswith('"')
+                            
+                            if starts_with_quote != ends_with_quote:
+                                # Safe guard for pure array strings containing URLs
+                                if not (line_str.startswith('"') and line_str.rstrip(',').endswith('"')):
+                                    all_errors.append({
+                                        "file": str(file_path),
+                                        "error": f"Malformed string value (Mismatched or missing double quotes around value: {value})",
+                                        "line": real_line_no,
+                                        "column": len(line)
+                                    })
 
         # Check 3: Universal Missing Commas Check (Object Braces, Strings & Arrays Aware)
         if line_no == total_clean_lines:
@@ -153,11 +173,13 @@ def validate_json_file(file_path):
                     "column": len(line)
                 })
         
-        # CASE B: Line ends with string quotes '"' or standard dynamic values
+        # CASE B: Line ends with string quotes '"'
         elif line_str.endswith('"') or line_str.rstrip(',').endswith('"') or clean_key == "Content-Security-Policy":
             if not line_str.endswith(','):
                 is_next_field = ":" in next_line_str or "=" in next_line_str
-                is_array_element = ":" not in line_str and "=" not in line_str and next_line_str.startswith('"')
+                
+                # Smart Array Element Check: Handles URLs safely by validating line context
+                is_array_element = next_line_str.startswith('"') and (is_url_line or ("=" not in line_str and (line_str.count(":") <= 1 or "http" in line_str)))
                 
                 if is_next_field or is_array_element:
                     if not is_standalone_arn:
