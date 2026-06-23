@@ -39,23 +39,30 @@ def validate_json_file(file_path):
     open_braces = 0
     open_brackets = 0
 
-    # First pass: Clean lines from comments to accurately track structural lookahead
+    # First pass: Filter out comments and empty lines completely, but preserve original line numbers for reporting
     cleaned_lines = []
-    for line in lines:
+    for idx, line in enumerate(lines, start=1):
         raw_line = line.strip()
-        if raw_line.startswith("//"):
-            cleaned_lines.append("")
-        elif "//" in raw_line:
-            cleaned_lines.append(line.split("//", 1)[0])
-        else:
-            cleaned_lines.append(line)
-
-    for line_no, line in enumerate(cleaned_lines, start=1):
-        line_str = line.strip()
         
-        # Skip empty lines or completely commented lines
-        if not line_str:
+        # Strip inline comments
+        if raw_line.startswith("//"):
             continue
+        elif "//" in raw_line:
+            clean_text = line.split("//", 1)[0].strip()
+        else:
+            clean_text = raw_line
+            
+        # Only keep it if it has actual JSON data
+        if clean_text:
+            cleaned_lines.append({"line_no": idx, "text": clean_text, "raw": line})
+
+    # Global tracking for block validation
+    total_clean_lines = len(cleaned_lines)
+
+    for line_no, line_data in enumerate(cleaned_lines, start=1):
+        line_str = line_data['text']
+        real_line_no = line_data['line_no']
+        line = line_data['raw']
 
         # Check 1: Bracket Matching and Structural Integrity Tracking
         open_braces += line_str.count('{') - line_str.count('}')
@@ -64,7 +71,7 @@ def validate_json_file(file_path):
         # CRITICAL REUSABLE CHECK: Detect if this line is a standalone ARN string
         is_standalone_arn = line_str.startswith('"arn') or line_str.startswith('arn') or "arn:aws" in line_str
 
-        # Check 2: Missing Quotes, Colons or Malformed Key-Value Pairs (Standalone ARN Fixed)
+        # Check 2: Missing Quotes, Colons or Malformed Key-Value Pairs
         if ":" in line_str and not is_standalone_arn:
             parts = line_str.split(":", 1)
             key = parts[0].strip()
@@ -82,7 +89,7 @@ def validate_json_file(file_path):
                     all_errors.append({
                         "file": str(file_path),
                         "error": f"Invalid Key format (Missing double quotes around key: {key})",
-                        "line": line_no,
+                        "line": real_line_no,
                         "column": 1
                     })
             
@@ -96,45 +103,36 @@ def validate_json_file(file_path):
                         all_errors.append({
                             "file": str(file_path),
                             "error": f"Malformed string value (Mismatched or missing double quotes around value: {value})",
-                            "line": line_no,
+                            "line": real_line_no,
                             "column": len(line)
                         })
 
-        # Check 3: Universal Missing Commas Check (ARN, Portfolio and Last-line Aware)
-        if line_no < len(cleaned_lines):
-            next_line_idx = line_no
-            next_line_str = ""
-            while next_line_idx < len(cleaned_lines):
-                if cleaned_lines[next_line_idx].strip():
-                    next_line_str = cleaned_lines[next_line_idx].strip()
-                    break
-                next_line_idx += 1
-                
-            if next_line_str:
-                is_next_closing = next_line_str.startswith(('}', ']'))
-                
-                if line_str.endswith('}'):
-                    if not is_next_closing and (next_line_str.startswith('{') or next_line_str.startswith('"')):
+        # Check 3: Universal Missing Commas Check (Perfect Last-Line & Block Aware)
+        if line_no < total_clean_lines:
+            next_line_str = cleaned_lines[line_no]['text'].strip()
+            is_next_closing = next_line_str.startswith(('}', ']'))
+            
+            if line_str.endswith('}'):
+                if not is_next_closing and (next_line_str.startswith('{') or next_line_str.startswith('"')):
+                    all_errors.append({
+                        "file": str(file_path),
+                        "error": "Missing comma (,) after closing brace '}' before the next block starts",
+                        "line": real_line_no,
+                        "column": len(line)
+                    })
+            elif line_str.endswith('"') or (("arn:aws" in line_str) and line_str.rstrip(',').endswith('"')):
+                # If next line is closing structure, current line NEVER needs a comma
+                if is_next_closing:
+                    continue
+                    
+                if next_line_str.startswith('"') and not line_str.endswith(','):
+                    if not is_standalone_arn:
                         all_errors.append({
                             "file": str(file_path),
-                            "error": "Missing comma (,) after closing brace '}' before the next block starts",
-                            "line": line_no,
+                            "error": f"Missing comma (,) after string/ARN value before the next field starts",
+                            "line": real_line_no,
                             "column": len(line)
                         })
-                elif line_str.endswith('"') or (("arn:aws" in line_str) and line_str.rstrip(',').endswith('"')):
-                    # If next line closes the block/array, we DO NOT need a comma
-                    if is_next_closing:
-                        continue
-                        
-                    if next_line_str.startswith('"') and not line_str.endswith(','):
-                        # Only throw error if it is genuinely a misplaced config line, not a safe standalone ARN
-                        if not is_standalone_arn:
-                            all_errors.append({
-                                "file": str(file_path),
-                                "error": f"Missing comma (,) after string/ARN value before the next field starts",
-                                "line": line_no,
-                                "column": len(line)
-                            })
 
     # Check 4: Unclosed Braces or Brackets at End Of File (EOF)
     if open_braces != 0:
