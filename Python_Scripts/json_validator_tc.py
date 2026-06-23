@@ -44,21 +44,14 @@ def validate_json_file(file_path):
     for idx, line in enumerate(lines, start=1):
         raw_line = line.strip()
         
-        # 🎯 SMART COMMENT STRIPPING 🎯
-        # जर लाईन सरळ // ने सुरू होत असेल तर ती पूर्ण कमेंट आहे
+        # SMART COMMENT STRIPPING
         if raw_line.startswith("//"):
             continue
-        
-        # जर मधे कुठे // असेल, तर चेक करा की तो :// चा भाग आहे का (URL)
         elif "//" in raw_line:
-            # जर :// नसेल, तरच ती खरी कमेंट आहे, तिथून लाईन स्प्लिट करा
             if "://" not in raw_line:
                 clean_text = line.split("//", 1)[0].strip()
             else:
-                # जर :// च्या व्यतिरिक्त दुसरा एखादा कमेंट वाला // असेल तर काळजी घ्या
-                # सोपा मार्ग: जर ओळीत खरंच कमेंट असेल (उदा. "url": "http://abc" // ही कमेंट आहे)
                 parts_comment = line.split("//")
-                # जर :// मुळे तुकडे पडले असतील, तर पहिल्या दोन तुकड्यांना एकत्र ठेवून (URL चा भाग), तिसऱ्या तुकड्याला कमेंट माना
                 if len(parts_comment) > 2 and parts_comment[0].endswith(":"):
                     clean_text = (parts_comment[0] + "//" + parts_comment[1]).strip()
                 else:
@@ -66,7 +59,6 @@ def validate_json_file(file_path):
         else:
             clean_text = raw_line
             
-        # Only keep it if it has actual JSON data
         if clean_text:
             cleaned_lines.append({"line_no": idx, "text": clean_text, "raw": line})
 
@@ -77,15 +69,15 @@ def validate_json_file(file_path):
         real_line_no = line_data['line_no']
         line = line_data['raw']
         
-        # Initialize clean_key to avoid UnboundLocalError
         clean_key = ""
 
         # Check 1: Bracket Matching and Structural Integrity Tracking
         open_braces += line_str.count('{') - line_str.count('}')
         open_brackets += line_str.count('[') - line_str.count(']')
 
-        # PERFECT PROTOCOL DETECTION
+        # 🔹 UNIVERSAL BYPASS DETECTION (ARN, URL, CSP & APIG एनहान्समेंट) 🔹
         is_arn = "arn:" in line_str.lower()
+        is_apig = "apig." in line_str.lower()  # 🎯 नवीन APIG बायपास नियम
         
         is_pure_url = False
         if "://" in line_str and "=" not in line_str:
@@ -97,7 +89,8 @@ def validate_json_file(file_path):
         # Check 2: Missing Quotes, Colons/Equals or Malformed Key-Value Pairs
         has_separator = ":" in line_str or "=" in line_str
         
-        if has_separator and not is_arn and not is_pure_url:
+        # जर ओळीत APIG, ARN किंवा स्वतंत्र URL असेल, तर स्प्लिटिंग लॉजिक पूर्णपणे बायपास करा!
+        if has_separator and not is_arn and not is_pure_url and not is_apig:
             separator = "=" if "=" in line_str else ":"
             
             if separator == ":" and "://" in line_str:
@@ -114,7 +107,6 @@ def validate_json_file(file_path):
                 clean_value = value.rstrip(',}]').strip()
                 clean_key = key.replace('"', '').strip()
                 
-                # Validation A: If Key lacks enclosing double quotes
                 if key and not (key.startswith('"') and key.endswith('"')):
                     is_portfolio_file = "portfolios.conf" in str(file_path)
                     is_valid_portfolio_key = is_portfolio_file and key.replace('-', '').isalnum()
@@ -127,7 +119,6 @@ def validate_json_file(file_path):
                             "column": 1
                         })
                 
-                # Validation B: Catch mismatched quotes
                 if clean_value and clean_value not in ['true', 'false', 'null'] and not clean_value.replace('.', '', 1).isdigit():
                     if not clean_value.startswith(('{', '[')):
                         
@@ -167,7 +158,6 @@ def validate_json_file(file_path):
         if is_next_closing:
             continue
 
-        # CASE A: Line ends with closing brace '}'
         if line_str.endswith('}'):
             if not line_str.endswith(',') and (":" in next_line_str or "=" in next_line_str or next_line_str.startswith('{')):
                 all_errors.append({
@@ -177,8 +167,8 @@ def validate_json_file(file_path):
                     "column": len(line)
                 })
         
-        # CASE B: Line ends with string quotes '"' किंवा ती ARN / CSP / Pure URL ची ओळ आहे
-        elif line_str.endswith('"') or line_str.rstrip(',').endswith('"') or is_arn or is_pure_url or clean_key == "Content-Security-Policy":
+        # 🎯 जर ओळ APIG / ARN / URL / CSP ची असेल, तर फक्त कॉमा व्हॅलिडेट करणे
+        elif line_str.endswith('"') or line_str.rstrip(',').endswith('"') or is_arn or is_pure_url or is_apig or clean_key == "Content-Security-Policy":
             if not line_str.endswith(','):
                 is_next_field = ":" in next_line_str or "=" in next_line_str
                 is_array_element = next_line_str.startswith('"')
@@ -186,7 +176,7 @@ def validate_json_file(file_path):
                 if is_next_field or is_array_element:
                     all_errors.append({
                         "file": str(file_path),
-                        "error": f"Missing comma (,) after string/ARN/URL value before the next field or element starts",
+                        "error": f"Missing comma (,) after string/ARN/URL/APIG value before the next field or element starts",
                         "line": real_line_no,
                         "column": len(line)
                     })
