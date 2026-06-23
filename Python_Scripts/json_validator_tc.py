@@ -70,24 +70,30 @@ def validate_json_file(file_path):
         open_braces += line_str.count('{') - line_str.count('}')
         open_brackets += line_str.count('[') - line_str.count(']')
 
-        # 🔹 UNIVERSAL SPECIAL BYPASS 🔹
+        # 🔹 PERFECT PROTOCOL DETECTION 🔹
         is_arn = "arn:" in line_str.lower()
-        is_pure_url = "://" in line_str and not ("=" in line_str) and (line_str.find(":") > line_str.find("://") if ":" in line_str else True)
+        
+        # जर ओळीत '://' असेल आणि पहिला कोलन हा '://' चाच भाग असेल (म्हणजे त्याच्या आधी दुसरा कोलन नाही),
+        # आणि ओळीत कुठेही '=' नसेल, तर ती १-१००% एक शुद्ध URL स्ट्रिंग आहे.
+        is_pure_url = False
+        if "://" in line_str and "=" not in line_str:
+            first_colon = line_str.find(":")
+            protocol_colon = line_str.find("://")
+            if first_colon == protocol_colon:
+                is_pure_url = True
 
         # Check 2: Missing Quotes, Colons/Equals or Malformed Key-Value Pairs
         has_separator = ":" in line_str or "=" in line_str
         
-        # जर ती सरळ अखंड URL/ARN असेल, तर तिला की-व्हॅल्यू स्प्लिटिंगमध्ये पाठवायचंच नाही!
+        # जर शुद्ध URL किंवा ARN असेल, तर स्प्लिटिंग लॉजिक पूर्णपणे बायपास करा!
         if has_separator and not is_arn and not is_pure_url:
             separator = "=" if "=" in line_str else ":"
             
-            # जर कोलन वापरत असू आणि तो कोलन एखाद्या URL च्या आतला असेल (उदा. "https://"), तर स्प्लिट करू नका
+            # एक्स्ट्रा सेफ्टी: कोलनच्या आधीची की प्रॉपर कोटेड नसेल तर स्प्लिट करू नका
             if separator == ":" and "://" in line_str:
-                # जर कोलन चिन्हाच्या आधी डबल कोट बंद होत नसेल, तर तो व्हॅल्यूचा भाग आहे, की चा नाही
                 first_colon_idx = line_str.find(":")
                 before_colon = line_str[:first_colon_idx].strip()
                 if not (before_colon.startswith('"') and before_colon.endswith('"')):
-                    # हा खरा की-व्हॅल्यू सेपरेटर नाहीये, स्किप करा!
                     has_separator = False
             
             if has_separator:
