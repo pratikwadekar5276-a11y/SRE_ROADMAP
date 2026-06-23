@@ -39,7 +39,7 @@ def validate_json_file(file_path):
     open_braces = 0
     open_brackets = 0
 
-    # First pass: Filter out comments and empty lines completely, but preserve original line numbers for reporting
+    # First pass: Filter out comments and empty lines completely, preserve original line numbers
     cleaned_lines = []
     for idx, line in enumerate(lines, start=1):
         raw_line = line.strip()
@@ -56,7 +56,6 @@ def validate_json_file(file_path):
         if clean_text:
             cleaned_lines.append({"line_no": idx, "text": clean_text, "raw": line})
 
-    # Global tracking for block validation
     total_clean_lines = len(cleaned_lines)
 
     for line_no, line_data in enumerate(cleaned_lines, start=1):
@@ -68,7 +67,7 @@ def validate_json_file(file_path):
         open_braces += line_str.count('{') - line_str.count('}')
         open_brackets += line_str.count('[') - line_str.count(']')
 
-        # CRITICAL REUSABLE CHECK: Detect if this line is a standalone ARN string
+        # CRITICAL REUSABLE CHECKS
         is_standalone_arn = line_str.startswith('"arn') or line_str.startswith('arn') or "arn:aws" in line_str
 
         # Check 2: Missing Quotes, Colons or Malformed Key-Value Pairs
@@ -93,46 +92,60 @@ def validate_json_file(file_path):
                         "column": 1
                     })
             
-            # Validation B: Catch mismatched quotes
+            # Validation B: Catch mismatched quotes (With Special Character Exception)
             if clean_value and clean_value not in ['true', 'false', 'null'] and not clean_value.replace('.', '', 1).isdigit():
                 if not clean_value.startswith(('{', '[')):
-                    starts_with_quote = clean_value.startswith('"')
-                    ends_with_quote = clean_value.endswith('"')
+                    starts_with_special = clean_value.startswith(('$', '@', '#', '%', '&', '*', '_', '-'))
                     
-                    if starts_with_quote != ends_with_quote:
-                        all_errors.append({
-                            "file": str(file_path),
-                            "error": f"Malformed string value (Mismatched or missing double quotes around value: {value})",
-                            "line": real_line_no,
-                            "column": len(line)
-                        })
+                    if starts_with_special:
+                        if clean_value.count('"') % 2 != 0:
+                            all_errors.append({
+                                "file": str(file_path),
+                                "error": f"Malformed dynamic value expression (Mismatched quotes in special expression: {value})",
+                                "line": real_line_no,
+                                "column": len(line)
+                            })
+                    else:
+                        starts_with_quote = clean_value.startswith('"')
+                        ends_with_quote = clean_value.endswith('"')
+                        
+                        if starts_with_quote != ends_with_quote:
+                            all_errors.append({
+                                "file": str(file_path),
+                                "error": f"Malformed string value (Mismatched or missing double quotes around value: {value})",
+                                "line": real_line_no,
+                                "column": len(line)
+                            })
 
-        # Check 3: Universal Missing Commas Check (Perfect Last-Line & Block Aware)
-        if line_no < total_clean_lines:
-            next_line_str = cleaned_lines[line_no]['text'].strip()
-            is_next_closing = next_line_str.startswith(('}', ']'))
-            
-            if line_str.endswith('}'):
-                if not is_next_closing and (next_line_str.startswith('{') or next_line_str.startswith('"')):
+        # Check 3: Universal Missing Commas Check (Perfect End Of File & Block Aware)
+        # CRITICAL FIX: If this is the absolute last data line of the file, do not check for comma!
+        if line_no == total_clean_lines:
+            continue
+
+        next_line_str = cleaned_lines[line_no]['text'].strip()
+        is_next_closing = next_line_str.startswith(('}', ']'))
+        
+        # ABSOLUTE BYPASS FOR LAST LINE OF ANY INTERNAL BLOCK OR ARRAY
+        if is_next_closing:
+            continue
+
+        if line_str.endswith('}'):
+            if next_line_str.startswith('{') or next_line_str.startswith('"'):
+                all_errors.append({
+                    "file": str(file_path),
+                    "error": "Missing comma (,) after closing brace '}' before the next block starts",
+                    "line": real_line_no,
+                    "column": len(line)
+                })
+        elif line_str.endswith('"') or (("arn:aws" in line_str) and line_str.rstrip(',').endswith('"')) or line_str.rstrip(',').endswith('"'):
+            if next_line_str.startswith('"') and not line_str.endswith(','):
+                if not is_standalone_arn:
                     all_errors.append({
                         "file": str(file_path),
-                        "error": "Missing comma (,) after closing brace '}' before the next block starts",
+                        "error": f"Missing comma (,) after string/ARN value before the next field starts",
                         "line": real_line_no,
                         "column": len(line)
                     })
-            elif line_str.endswith('"') or (("arn:aws" in line_str) and line_str.rstrip(',').endswith('"')):
-                # If next line is closing structure, current line NEVER needs a comma
-                if is_next_closing:
-                    continue
-                    
-                if next_line_str.startswith('"') and not line_str.endswith(','):
-                    if not is_standalone_arn:
-                        all_errors.append({
-                            "file": str(file_path),
-                            "error": f"Missing comma (,) after string/ARN value before the next field starts",
-                            "line": real_line_no,
-                            "column": len(line)
-                        })
 
     # Check 4: Unclosed Braces or Brackets at End Of File (EOF)
     if open_braces != 0:
