@@ -79,8 +79,6 @@ def validate_json_file(file_path):
         is_arn = "arn:" in line_str.lower()
         is_apig = "apig." in line_str.lower()
         is_java_env = "java_tool" in line_str.lower()
-        
-        # 🎯 बुलेटप्रूफ मल्टिपल URLs नियम: ओळीत '://' एकापेक्षा जास्त वेळा असणे
         is_multiple_urls = line_str.count("://") > 1
         
         is_pure_url = False
@@ -93,8 +91,10 @@ def validate_json_file(file_path):
         # Check 2: Missing Quotes, Colons/Equals or Malformed Key-Value Pairs
         has_separator = ":" in line_str or "=" in line_str
         
-        # जर मल्टिपल URLs, JAVA ENV, APIG, ARN किंवा सिंगल URL असेल, तर कडक कोट्स व्हॅलिडेशन बायपास करा!
-        if has_separator and not is_arn and not is_pure_url and not is_apig and not is_multiple_urls and not is_java_env:
+        # 🎯 नियम: जर बायपास ट्रिगर झाला, तर Check 2 चं संपूर्ण कोट व्हॅलिडेशन लॉजिक स्किप करा!
+        should_bypass_quotes = is_arn or is_pure_url or is_apig or is_multiple_urls or is_java_env
+        
+        if has_separator and not should_bypass_quotes:
             if "=" in line_str:
                 first_equal_idx = line_str.find("=")
                 before_equal = line_str[:first_equal_idx].strip()
@@ -181,8 +181,8 @@ def validate_json_file(file_path):
                     "column": len(line)
                 })
         
-        # 🎯 मल्टिपल URLs च्या ओळीचा शेवटचा कॉमा चेक करणे
-        elif line_str.endswith('"') or line_str.rstrip(',').endswith('"') or line_str.rstrip(',"').endswith('=') or is_arn or is_pure_url or is_apig or is_multiple_urls or is_java_env or clean_key == "Content-Security-Policy":
+        # मल्टिपल URLs किंवा जावा ऑप्शन्सच्या ओळींचा फक्त शेवटचा कॉमा व्हॅलिडेट करणे
+        elif line_str.endswith('"') or line_str.rstrip(',').endswith('"') or line_str.rstrip(',"').endswith('=') or should_bypass_quotes or clean_key == "Content-Security-Policy":
             if not line_str.endswith(','):
                 is_next_field = ":" in next_line_str or "=" in next_line_str
                 is_array_element = next_line_str.startswith('"')
