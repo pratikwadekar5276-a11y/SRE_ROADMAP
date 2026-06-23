@@ -44,11 +44,25 @@ def validate_json_file(file_path):
     for idx, line in enumerate(lines, start=1):
         raw_line = line.strip()
         
-        # Strip inline comments
+        # 🎯 SMART COMMENT STRIPPING 🎯
+        # जर लाईन सरळ // ने सुरू होत असेल तर ती पूर्ण कमेंट आहे
         if raw_line.startswith("//"):
             continue
+        
+        # जर मधे कुठे // असेल, तर चेक करा की तो :// चा भाग आहे का (URL)
         elif "//" in raw_line:
-            clean_text = line.split("//", 1)[0].strip()
+            # जर :// नसेल, तरच ती खरी कमेंट आहे, तिथून लाईन स्प्लिट करा
+            if "://" not in raw_line:
+                clean_text = line.split("//", 1)[0].strip()
+            else:
+                # जर :// च्या व्यतिरिक्त दुसरा एखादा कमेंट वाला // असेल तर काळजी घ्या
+                # सोपा मार्ग: जर ओळीत खरंच कमेंट असेल (उदा. "url": "http://abc" // ही कमेंट आहे)
+                parts_comment = line.split("//")
+                # जर :// मुळे तुकडे पडले असतील, तर पहिल्या दोन तुकड्यांना एकत्र ठेवून (URL चा भाग), तिसऱ्या तुकड्याला कमेंट माना
+                if len(parts_comment) > 2 and parts_comment[0].endswith(":"):
+                    clean_text = (parts_comment[0] + "//" + parts_comment[1]).strip()
+                else:
+                    clean_text = raw_line
         else:
             clean_text = raw_line
             
@@ -70,11 +84,9 @@ def validate_json_file(file_path):
         open_braces += line_str.count('{') - line_str.count('}')
         open_brackets += line_str.count('[') - line_str.count(']')
 
-        # 🔹 PERFECT PROTOCOL DETECTION 🔹
+        # PERFECT PROTOCOL DETECTION
         is_arn = "arn:" in line_str.lower()
         
-        # जर ओळीत '://' असेल आणि पहिला कोलन हा '://' चाच भाग असेल (म्हणजे त्याच्या आधी दुसरा कोलन नाही),
-        # आणि ओळीत कुठेही '=' नसेल, तर ती १-१००% एक शुद्ध URL स्ट्रिंग आहे.
         is_pure_url = False
         if "://" in line_str and "=" not in line_str:
             first_colon = line_str.find(":")
@@ -85,11 +97,9 @@ def validate_json_file(file_path):
         # Check 2: Missing Quotes, Colons/Equals or Malformed Key-Value Pairs
         has_separator = ":" in line_str or "=" in line_str
         
-        # जर शुद्ध URL किंवा ARN असेल, तर स्प्लिटिंग लॉजिक पूर्णपणे बायपास करा!
         if has_separator and not is_arn and not is_pure_url:
             separator = "=" if "=" in line_str else ":"
             
-            # एक्स्ट्रा सेफ्टी: कोलनच्या आधीची की प्रॉपर कोटेड नसेल तर स्प्लिट करू नका
             if separator == ":" and "://" in line_str:
                 first_colon_idx = line_str.find(":")
                 before_colon = line_str[:first_colon_idx].strip()
@@ -121,7 +131,6 @@ def validate_json_file(file_path):
                 if clean_value and clean_value not in ['true', 'false', 'null'] and not clean_value.replace('.', '', 1).isdigit():
                     if not clean_value.startswith(('{', '[')):
                         
-                        # Content-Security-Policy Override
                         if clean_key == "Content-Security-Policy":
                             continue
 
