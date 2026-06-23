@@ -49,7 +49,6 @@ def validate_json_file(file_path):
             continue
             
         # SMART BYPASS: If the line contains multiple URLs or JAVA_TOOL_OPTIONS, skip comment splitting entirely
-        # This prevents breaking valid data lines prematurely.
         if raw_line.count("://") > 1 or "java_tool" in raw_line.lower():
             cleaned_lines.append({"line_no": idx, "text": raw_line, "raw": line, "is_immune": True})
             continue
@@ -91,6 +90,7 @@ def validate_json_file(file_path):
         is_apig = "apig." in line_str.lower()
         is_java_env = "java_tool" in line_str.lower() or is_immune
         is_multiple_urls = line_str.count("://") > 1 or is_immune
+        is_dynamic_template = "${" in line_str  # 🎯 Handles mixed quoted template blocks safely
         
         is_pure_url = False
         if "://" in line_str and "=" not in line_str and not is_multiple_urls:
@@ -101,9 +101,9 @@ def validate_json_file(file_path):
 
         # Check 2: Missing Quotes, Colons/Equals or Malformed Key-Value Pairs
         has_separator = ":" in line_str or "=" in line_str
-        should_bypass_quotes = is_arn or is_pure_url or is_apig or is_multiple_urls or is_java_env
+        should_bypass_quotes = is_arn or is_pure_url or is_apig or is_multiple_urls or is_java_env or is_dynamic_template
         
-        # If any bypass rule is triggered (Multiple URLs, Java Environment etc.), skip Check 2 quote validation completely
+        # If any bypass rule is triggered, skip Check 2 quote syntax assertions completely
         if has_separator and not should_bypass_quotes:
             if "=" in line_str:
                 first_equal_idx = line_str.find("=")
@@ -163,8 +163,6 @@ def validate_json_file(file_path):
                             starts_with_quote = clean_value.startswith('"')
                             ends_with_quote = clean_value.endswith('"') or clean_value.rstrip(',"').endswith('=')
                             
-                            # RELAXED CHECK: If the entire line starts and ends with proper quotes, consider it valid
-                            # regardless of mixed internal punctuation/characters (like inline colons or commas).
                             is_entire_line_quoted = line_str.startswith('"') and line_str.rstrip(',').endswith('"')
                             
                             if starts_with_quote != ends_with_quote and not clean_value.endswith('=') and not is_entire_line_quoted:
@@ -194,7 +192,7 @@ def validate_json_file(file_path):
                     "column": len(line)
                 })
         
-        # Only validate the trailing comma structure for skipped/immunized complex lines
+        # Trailing comma safety check remains functional for dynamic blocks
         elif line_str.endswith('"') or line_str.rstrip(',').endswith('"') or line_str.rstrip(',"').endswith('=') or should_bypass_quotes or clean_key == "Content-Security-Policy":
             if not line_str.endswith(','):
                 is_next_field = ":" in next_line_str or "=" in next_line_str
