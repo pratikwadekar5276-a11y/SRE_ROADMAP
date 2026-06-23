@@ -61,7 +61,7 @@ def validate_json_file(file_path):
         open_braces += line_str.count('{') - line_str.count('}')
         open_brackets += line_str.count('[') - line_str.count(']')
 
-        # Check 2: Missing Quotes, Colons or Malformed Key-Value Pairs (ARN & Special Strings Fixed)
+        # Check 2: Missing Quotes, Colons or Malformed Key-Value Pairs (ARN Special Logic)
         if ":" in line_str:
             parts = line_str.split(":", 1)
             key = parts[0].strip()
@@ -83,13 +83,21 @@ def validate_json_file(file_path):
                         "column": 1
                     })
             
-            # Validation B: Catch mismatched quotes like PF1001" or "PF1001
-            if clean_value and clean_value not in ['true', 'false', 'null'] and not clean_value.replace('.', '', 1).isdigit():
+            # Validation B: Catch mismatched quotes (ARN Dedicated Logic)
+            if "arn:" in clean_value:
+                if not (clean_value.startswith('"') and clean_value.endswith('"')):
+                    all_errors.append({
+                        "file": str(file_path),
+                        "error": f"Malformed ARN string (ARN must be fully enclosed in double quotes: {value})",
+                        "line": line_no,
+                        "column": len(line)
+                    })
+            elif clean_value and clean_value not in ['true', 'false', 'null'] and not clean_value.replace('.', '', 1).isdigit():
                 if not clean_value.startswith(('{', '[')):
                     starts_with_quote = clean_value.startswith('"')
                     ends_with_quote = clean_value.endswith('"')
                     
-                    if starts_with_quote != ends_with_quote:  # Mismatched quotes logic
+                    if starts_with_quote != ends_with_quote:
                         all_errors.append({
                             "file": str(file_path),
                             "error": f"Malformed string value (Mismatched or missing double quotes around value: {value})",
@@ -97,7 +105,7 @@ def validate_json_file(file_path):
                             "column": len(line)
                         })
 
-        # Check 3: Universal Missing Commas Check (Comment Aware)
+        # Check 3: Universal Missing Commas Check (ARN and Last-line Aware)
         if line_no < len(cleaned_lines):
             next_line_idx = line_no
             next_line_str = ""
@@ -108,22 +116,25 @@ def validate_json_file(file_path):
                 next_line_idx += 1
                 
             if next_line_str:
+                is_next_closing = next_line_str.startswith(('}', ']'))
+                
                 if line_str.endswith('}'):
-                    if next_line_str.startswith('{') or next_line_str.startswith('"'):
+                    if not is_next_closing and (next_line_str.startswith('{') or next_line_str.startswith('"')):
                         all_errors.append({
                             "file": str(file_path),
                             "error": "Missing comma (,) after closing brace '}' before the next block starts",
                             "line": line_no,
                             "column": len(line)
                         })
-                elif line_str.endswith('"'):
-                    if next_line_str.startswith('"'):
-                        all_errors.append({
-                            "file": str(file_path),
-                            "error": f"Missing comma (,) between fields or array elements (Found: {line_str})",
-                            "line": line_no,
-                            "column": len(line)
-                        })
+                elif line_str.endswith('"') or (("arn:" in line_str) and line_str.rstrip(',').endswith('"')):
+                    if next_line_str.startswith('"') and not line_str.endswith(','):
+                        if not is_next_closing:
+                            all_errors.append({
+                                "file": str(file_path),
+                                "error": f"Missing comma (,) after string/ARN value before the next field starts",
+                                "line": line_no,
+                                "column": len(line)
+                            })
 
     # Check 4: Unclosed Braces or Brackets at End Of File (EOF)
     if open_braces != 0:
@@ -154,6 +165,7 @@ validate_json_file(filepath3)
 # 5. Final Report Generation & TeamCity Build Control Logic
 if all_errors:
     BLUE_COLOR  = "\033[94m"
+    RESET_COLOR = "\03="
     RESET_COLOR = "\033[0m"
     
     print(f"\n{BLUE_COLOR}🔹 Validation Report - Found {len(all_errors)} errors{RESET_COLOR}")
@@ -161,7 +173,7 @@ if all_errors:
     col_widths = [50, 6, 12, 65]
     row_format = "│ {{:<{}}} │ {{:<{}}} │ {{:<{}}} │ {{:<{}}} │".format(*col_widths)
     
-    top_border    = "┌─" + "─" * col_widths[0] + "─┬─" + "─" * col_widths[1] + "─┬─" + "─" * col_widths[2] + "─┬─" + "─" * col_widths[3] + "─┐"
+    top_border = "┌─" + "─" * col_widths[0] + "─┬─" + "─" * col_widths[1] + "─┬─" + "─" * col_widths[2] + "─┬─" + "─" * col_widths[3] + "─┐"
     header_border = "├─" + "─" * col_widths[0] + "─┼─" + "─" * col_widths[1] + "─┼─" + "─" * col_widths[2] + "─┼─" + "─" * col_widths[3] + "─┤"
     bottom_border = "└─" + "─" * col_widths[0] + "─┴─" + "─" * col_widths[1] + "─┴─" + "─" * col_widths[2] + "─┴─" + "─" * col_widths[3] + "─┘"
     
