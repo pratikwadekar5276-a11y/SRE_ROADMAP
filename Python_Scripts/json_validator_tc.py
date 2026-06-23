@@ -114,7 +114,6 @@ def validate_json_file(file_path):
                                 "line": real_line_no,
                                 "column": len(line)
                             })
-                        # Content-Security-Policy चा चेक इथेच संपला, मधला पार्ट पूर्ण स्किप!
                         continue
 
                     # Regular logic for other fields
@@ -140,7 +139,7 @@ def validate_json_file(file_path):
                                 "column": len(line)
                             })
 
-        # Check 3: Universal Missing Commas Check (Object Braces & Strings Aware)
+        # Check 3: Universal Missing Commas Check (Object Braces, Strings & Arrays Aware)
         if line_no == total_clean_lines:
             continue
 
@@ -160,16 +159,20 @@ def validate_json_file(file_path):
                     "column": len(line)
                 })
         
-        # CASE B: Line ends with string quotes '"'
+        # CASE B: Line ends with string quotes '"' (Handles Fields and Arrays!)
         elif line_str.endswith('"') or line_str.rstrip(',').endswith('"'):
-            if not line_str.endswith(',') and (":" in next_line_str or "=" in next_line_str):
-                if not is_standalone_arn:
-                    all_errors.append({
-                        "file": str(file_path),
-                        "error": f"Missing comma (,) after string/ARN value before the next field starts",
-                        "line": real_line_no,
-                        "column": len(line)
-                    })
+            if not line_str.endswith(','):
+                is_next_field = ":" in next_line_str or "=" in next_line_str
+                is_array_element = ":" not in line_str and "=" not in line_str and next_line_str.startswith('"')
+                
+                if is_next_field or is_array_element:
+                    if not is_standalone_arn:
+                        all_errors.append({
+                            "file": str(file_path),
+                            "error": f"Missing comma (,) after string/ARN value before the next field or element starts",
+                            "line": real_line_no,
+                            "column": len(line)
+                        })
 
     # Check 4: Unclosed Braces or Brackets at End Of File (EOF)
     if open_braces != 0:
@@ -202,7 +205,7 @@ if all_errors:
     BLUE_COLOR  = "\033[94m"
     RESET_COLOR = "\033[0m"
     
-    print(f"\n{BLUE_COLOR}🔹 Validation Report - Found {len(all_errors)} errors{RESET_COLOR}")
+    print(f"\n{BLUE_COLOR}Validation Report - Found {len(all_errors)} errors{RESET_COLOR}")
     
     col_widths = [50, 6, 12, 65]
     row_format = "│ {{:<{}}} │ {{:<{}}} │ {{:<{}}} │ {{:<{}}} │".format(*col_widths)
