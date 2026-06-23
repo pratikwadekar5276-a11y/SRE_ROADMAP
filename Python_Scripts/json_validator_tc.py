@@ -123,7 +123,7 @@ def validate_json_file(file_path):
                                 "column": len(line)
                             })
 
-        # Check 3: Universal Missing Commas Check (Perfect End Of File & Block Aware)
+        # Check 3: Universal Missing Commas Check (Strict Field-Separator Aware)
         if line_no == total_clean_lines:
             continue
 
@@ -142,7 +142,8 @@ def validate_json_file(file_path):
                     "column": len(line)
                 })
         elif line_str.endswith('"') or line_str.rstrip(',').endswith('"'):
-            if not line_str.endswith(',') and next_line_str.startswith('"'):
+            # Only complain about a missing comma if the next line is genuinely a new key declaration (has : or =)
+            if not line_str.endswith(',') and (":" in next_line_str or "=" in next_line_str):
                 if not is_standalone_arn:
                     all_errors.append({
                         "file": str(file_path),
