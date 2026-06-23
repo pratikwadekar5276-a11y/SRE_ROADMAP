@@ -50,7 +50,7 @@ def validate_json_file(file_path):
         open_braces += line_str.count('{') - line_str.count('}')
         open_brackets += line_str.count('[') - line_str.count(']')
 
-        # Check 2: Missing Quotes, Colons or Malformed Key-Value Pairs (UPDATED FOR PORTFOLIO EXCLUSION)
+# Check 2: Missing Quotes, Colons or Malformed Key-Value Pairs
         if ":" in line_str:
             parts = line_str.split(":", 1)
             key = parts[0].strip()
@@ -63,6 +63,7 @@ def validate_json_file(file_path):
             if key and not (key.startswith('"') and key.endswith('"')):
                 # EXCLUSION FOR PORTFOLIO FILE: Allow unquoted keys with hyphens only in portfolios.conf
                 is_portfolio_file = "portfolios.conf" in str(file_path)
+                # Matches keys like 'abc-d', 'portfolio-1', etc.
                 is_valid_portfolio_key = is_portfolio_file and key.replace('-', '').isalnum()
                 
                 if not key.startswith('{') and not is_valid_portfolio_key:
@@ -74,17 +75,19 @@ def validate_json_file(file_path):
                     })
             
             # Validation B: Catch mismatched quotes like PF1001" or "PF1001
-            if clean_value and not clean_value.replace('.', '', 1).isdigit() and clean_value not in ['true', 'false', 'null'] and not clean_value.startswith(('{', '[')):
-                starts_with_quote = clean_value.startswith('"')
-                ends_with_quote = clean_value.endswith('"')
-                
-                if starts_with_quote != ends_with_quote:  # Mismatched quotes logic
-                    all_errors.append({
-                        "file": str(file_path),
-                        "error": f"Malformed string value (Mismatched or missing double quotes around value: {value})",
-                        "line": line_no,
-                        "column": len(line)
-                    })
+            # Explicitly ensure we skip valid nested block openings like { or [
+            if clean_value and not clean_value.replace('.', '', 1).isdigit() and clean_value not in ['true', 'false', 'null']:
+                if not clean_value.startswith(('{', '[')):
+                    starts_with_quote = clean_value.startswith('"')
+                    ends_with_quote = clean_value.endswith('"')
+                    
+                    if starts_with_quote != ends_with_quote:  # Mismatched quotes logic
+                        all_errors.append({
+                            "file": str(file_path),
+                            "error": f"Malformed string value (Mismatched or missing double quotes around value: {value})",
+                            "line": line_no,
+                            "column": len(line)
+                        })
 
         # Check 3: Universal Missing Commas Check (Fixed for String Lists & Blocks)
         if line_no < len(lines):
