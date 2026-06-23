@@ -75,7 +75,7 @@ def validate_json_file(file_path):
                     "column": len(line)
                 })
 
-        # Check 3: Missing Commas between JSON blocks/objects (Custom Logic Fix)
+        # Check 3: Universal Missing Commas Check (FIXED FOR STRING LISTS & BLOCKS)
         if line_no < len(lines):
             # Evaluate the next non-empty line context
             next_line_idx = line_no
@@ -86,15 +86,25 @@ def validate_json_file(file_path):
                     break
                 next_line_idx += 1
                 
-            # Logic: If current line ends with '}' and next line starts with a new block '{' or a new key '"'
-            if line_str.endswith('}'):
-                if next_line_str and (next_line_str.startswith('{') or next_line_str.startswith('"')):
-                    all_errors.append({
-                        "file": str(file_path),
-                        "error": "Missing comma (,) after closing brace '}' before the next block starts",
-                        "line": line_no,
-                        "column": len(line)
-                    })
+            if next_line_str:
+                # Case A: Handle missing commas between JSON blocks
+                if line_str.endswith('}'):
+                    if next_line_str.startswith('{') or next_line_str.startswith('"'):
+                        all_errors.append({
+                            "file": str(file_path),
+                            "error": "Missing comma (,) after closing brace '}' before the next block starts",
+                            "line": line_no,
+                            "column": len(line)
+                        })
+                # Case B: Handle missing commas between list elements / standalone strings
+                elif line_str.endswith('"'):
+                    if next_line_str.startswith('"'):
+                        all_errors.append({
+                            "file": str(file_path),
+                            "error": f"Missing comma (,) between fields or array elements (Found: {line_str})",
+                            "line": line_no,
+                            "column": len(line)
+                        })
 
     # Check 4: Unclosed Braces or Brackets at End Of File (EOF)
     if open_braces != 0:
@@ -113,47 +123,36 @@ def validate_json_file(file_path):
         })
 
 # --- Main Runtime Execution Pipeline --- 
-# Scan app configs folder recursively if it points to a directory structure
 path1 = Path(filepath1)
 if path1.exists() and path1.is_dir():
     for file in path1.iterdir():
         validate_json_file(file)
 
-# Explicitly validate critical platform environment configuration targets
 validate_json_file(filepath2)
 validate_json_file(filepath3)
 
 
 # 5. Final Report Generation & TeamCity Build Control Logic
 if all_errors:
-    # ANSI Escape Codes for Output Colorization (\033[91m = Bright Red, \033[0m = Reset)
+    # ANSI Escape Codes for Dark Blue Output Colorization (\033[94m = Bright/Dark Blue)
     BLUE_COLOR  = "\033[94m"
     RESET_COLOR = "\033[0m"
     
-    # Print the primary header statement in dark/bright blue as requested
-    print(f"{BLUE_COLOR}Validation Report - Found {len(all_errors)} errors{RESET_COLOR}")
+    print(f"\n{BLUE_COLOR}Validation Report - Found {len(all_errors)} errors{RESET_COLOR}")
     
-    # Define table column widths: File, Line, Column, Error Message
-    # Column width is configured to 12 to cleanly contain "End of file" metadata string
     col_widths = [50, 6, 12, 65]
     row_format = "│ {{:<{}}} │ {{:<{}}} │ {{:<{}}} │ {{:<{}}} │".format(*col_widths)
     
-    # Generate static clean grid borders for the text-based summary table
     top_border    = "┌─" + "─" * col_widths[0] + "─┬─" + "─" * col_widths[1] + "─┬─" + "─" * col_widths[2] + "─┬─" + "─" * col_widths[3] + "─┐"
     header_border = "├─" + "─" * col_widths[0] + "─┼─" + "─" * col_widths[1] + "─┼─" + "─" * col_widths[2] + "─┼─" + "─" * col_widths[3] + "─┤"
     bottom_border = "└─" + "─" * col_widths[0] + "─┴─" + "─" * col_widths[1] + "─┴─" + "─" * col_widths[2] + "─┴─" + "─" * col_widths[3] + "─┘"
     
-    # Print formatted Table Header block
     print(top_border)
     print(row_format.format("File Path", "Line", "Column", "Error Description"))
     print(header_border)
     
-    # Print Table Rows dynamically while truncating extremely long agent file paths
     for err in all_errors:
-        # Strip TeamCity's local worker agent workspace path prefix to compute a clean relative repo path
         clean_path = os.path.relpath(err['file'], start=workdir)
-        
-        # Truncate clean file path from the left with ellipsis only if it exceeds layout specifications
         if len(clean_path) > col_widths[0]:
             clean_path = "..." + clean_path[-(col_widths[0] - 3):]
             
@@ -168,8 +167,8 @@ if all_errors:
     
     print("\n Result: JSON Validation Failed. Please review the above errors and fix them before proceeding.")
     sys.stdout.flush()
-    sys.exit(1)  # Forcefully crash the execution pipeline step to block bad artifact deployments
+    sys.exit(1)
 
 else:
     print("\n Result: All JSON configuration targets are perfectly valid!")
-    sys.exit(0)  # Signal perfect execution success status to TeamCity agent engine
+    sys.exit(0)
