@@ -78,13 +78,13 @@ def validate_json_file(file_path):
         # 🔹 UNIVERSAL BYPASS DETECTION 🔹
         is_arn = "arn:" in line_str.lower()
         is_apig = "apig." in line_str.lower()
-        is_java_env = "java_tool" in line_str.lower()  # 🎯 नवीन JAVA_TOOL_OPTIONS बायपास नियम
+        is_java_env = "java_tool" in line_str.lower()
         
-        url_count = line_str.lower().count("http://") + line_str.lower().count("https://")
-        is_multiple_urls = url_count > 1
+        # 🎯 बुलेटप्रूफ मल्टिपल URLs नियम: ओळीत '://' एकापेक्षा जास्त वेळा असणे
+        is_multiple_urls = line_str.count("://") > 1
         
         is_pure_url = False
-        if "://" in line_str and "=" not in line_str:
+        if "://" in line_str and "=" not in line_str and not is_multiple_urls:
             first_colon = line_str.find(":")
             protocol_colon = line_str.find("://")
             if first_colon == protocol_colon:
@@ -93,7 +93,7 @@ def validate_json_file(file_path):
         # Check 2: Missing Quotes, Colons/Equals or Malformed Key-Value Pairs
         has_separator = ":" in line_str or "=" in line_str
         
-        # 🎯 जर JAVA ENV, मल्टिपल URLs, APIG, ARN किंवा सिंगल URL असेल, तर बायपास करा!
+        # जर मल्टिपल URLs, JAVA ENV, APIG, ARN किंवा सिंगल URL असेल, तर कडक कोट्स व्हॅलिडेशन बायपास करा!
         if has_separator and not is_arn and not is_pure_url and not is_apig and not is_multiple_urls and not is_java_env:
             if "=" in line_str:
                 first_equal_idx = line_str.find("=")
@@ -181,7 +181,7 @@ def validate_json_file(file_path):
                     "column": len(line)
                 })
         
-        # 🎯 जर ओळ JAVA_TOOL_OPTIONS ची असेल, तरीही तिचा शेवटचा कॉमा व्यवस्थित व्हॅलिडेट झाला पाहिजे
+        # 🎯 मल्टिपल URLs च्या ओळीचा शेवटचा कॉमा चेक करणे
         elif line_str.endswith('"') or line_str.rstrip(',').endswith('"') or line_str.rstrip(',"').endswith('=') or is_arn or is_pure_url or is_apig or is_multiple_urls or is_java_env or clean_key == "Content-Security-Policy":
             if not line_str.endswith(','):
                 is_next_field = ":" in next_line_str or "=" in next_line_str
