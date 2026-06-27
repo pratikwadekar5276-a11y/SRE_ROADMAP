@@ -210,6 +210,7 @@ print(f"Starting Environment-Aware scan across VCS directories...")
 print(f"Target Environment: [{env}] | Target Client: [{tenantcode}]")
 targets_found = False
 
+# Iterate through directories to find configuration targets
 for root, dirs, files in os.walk(workdir):
     normalized_root = Path(root).as_posix()
     
@@ -218,7 +219,9 @@ for root, dirs, files in os.walk(workdir):
         targets_found = True
         for file in files:
             file_full_path = Path(root) / file
-            print(f" [MATCHED-{env}] Validating App Config: {file_full_path}")
+            # Use relative path for cleaner logs
+            rel_path = os.path.relpath(file_full_path, workdir)
+            print(f" [MATCHED-{env}] Validating App Config: {rel_path}")
             validate_json_file(file_full_path)
 
     tenant_target_part = f"config/tenants/{env}/{tenantcode}"
@@ -226,7 +229,8 @@ for root, dirs, files in os.walk(workdir):
         if "tenant.conf" in files:
             targets_found = True
             tenant_file = Path(root) / "tenant.conf"
-            print(f" [MATCHED-{env}] Validating Tenant File: {tenant_file}")
+            rel_tenant = os.path.relpath(tenant_file, workdir)
+            print(f" [MATCHED-{env}] Validating Tenant File: {rel_tenant}")
             validate_json_file(tenant_file)
 
     portfolio_target_part = f"portfolios/{env}"
@@ -234,7 +238,8 @@ for root, dirs, files in os.walk(workdir):
         if "portfolios.conf" in files:
             targets_found = True
             portfolio_file = Path(root) / "portfolios.conf"
-            print(f" [MATCHED-{env}] Validating Portfolio File: {portfolio_file}")
+            rel_port = os.path.relpath(portfolio_file, workdir)
+            print(f" [MATCHED-{env}] Validating Portfolio File: {rel_port}")
             validate_json_file(portfolio_file)
 
 if not targets_found:
