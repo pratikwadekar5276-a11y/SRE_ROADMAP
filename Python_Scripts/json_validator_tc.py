@@ -8,11 +8,6 @@ env = sys.argv[1]
 tenantcode = sys.argv[2]
 workdir = sys.argv[3]
 
-# 2. Define absolute paths for validation targets dynamically based on environment
-filepath1 = f"{workdir}/config/apps/{env}/{tenantcode}"
-filepath2 = f"{workdir}/config/tenants/{env}/{tenantcode}/tenant.conf"
-filepath3 = f"{workdir}/portfolios/{env}/portfolios.conf"
-
 # Global array to collect all structural and syntax errors across files
 all_errors = []
 
@@ -44,19 +39,15 @@ def validate_json_file(file_path):
     for idx, line in enumerate(lines, start=1):
         raw_line = line.strip()
         
-        # If the line directly starts with // or #, it is a pure comment line
         if raw_line.startswith("//") or raw_line.startswith("#"):
             continue
             
-        # SMART BYPASS: If the line contains multiple URLs or JAVA_TOOL_OPTIONS, skip comment splitting entirely
         if raw_line.count("://") > 1 or "java_tool" in raw_line.lower():
             cleaned_lines.append({"line_no": idx, "text": raw_line, "raw": line, "is_immune": True})
             continue
 
-        # Smart inline comment filtering for other standard lines
         if "//" in raw_line:
             first_comment_idx = raw_line.find("//")
-            # If '//' is found inside double quotes (odd count of quotes before it), do not treat it as a comment!
             if "://" in raw_line or raw_line[:first_comment_idx].count('"') % 2 != 0:
                 clean_text = raw_line
             else:
@@ -81,16 +72,14 @@ def validate_json_file(file_path):
         
         clean_key = ""
 
-        # Check 1: Bracket Matching and Structural Integrity Tracking
         open_braces += line_str.count('{') - line_str.count('}')
         open_brackets += line_str.count('[') - line_str.count(']')
 
-        # UNIVERSAL BYPASS DETECTION
         is_arn = "arn:" in line_str.lower()
         is_apig = "apig." in line_str.lower()
         is_java_env = "java_tool" in line_str.lower() or is_immune
         is_multiple_urls = line_str.count("://") > 1 or is_immune
-        is_dynamic_template = "${" in line_str  # Handles mixed quoted template blocks safely
+        is_dynamic_template = "${" in line_str  
         
         is_pure_url = False
         if "://" in line_str and "=" not in line_str and not is_multiple_urls:
@@ -99,11 +88,9 @@ def validate_json_file(file_path):
             if first_colon == protocol_colon:
                 is_pure_url = True
 
-        # Check 2: Missing Quotes, Colons/Equals or Malformed Key-Value Pairs
         has_separator = ":" in line_str or "=" in line_str
         should_bypass_quotes = is_arn or is_pure_url or is_apig or is_multiple_urls or is_java_env or is_dynamic_template
         
-        # If any bypass rule is triggered, skip Check 2 quote syntax assertions completely
         if has_separator and not should_bypass_quotes:
             if "=" in line_str:
                 first_equal_idx = line_str.find("=")
@@ -162,7 +149,6 @@ def validate_json_file(file_path):
                         else:
                             starts_with_quote = clean_value.startswith('"')
                             ends_with_quote = clean_value.endswith('"') or clean_value.rstrip(',"').endswith('=')
-                            
                             is_entire_line_quoted = line_str.startswith('"') and line_str.rstrip(',').endswith('"')
                             
                             if starts_with_quote != ends_with_quote and not clean_value.endswith('=') and not is_entire_line_quoted:
@@ -173,7 +159,6 @@ def validate_json_file(file_path):
                                     "column": len(line)
                                 })
 
-        # Check 3: Universal Missing Commas Check (Object Braces, Strings & Arrays Aware)
         if line_no == total_clean_lines:
             continue
 
@@ -192,12 +177,11 @@ def validate_json_file(file_path):
                     "column": len(line)
                 })
         
-        # Trailing comma safety check for string, closed brace objects, and inline bypassed blocks
         elif line_str.endswith('"') or line_str.rstrip(',').endswith('"') or line_str.endswith('}') or line_str.rstrip(',').endswith('}') or line_str.rstrip(',"').endswith('=') or should_bypass_quotes or clean_key == "Content-Security-Policy":
             if not line_str.endswith(','):
                 is_next_field = ":" in next_line_str or "=" in next_line_str
                 is_array_element = next_line_str.startswith('"')
-                is_next_block = next_line_str.startswith('{')  # 🎯 Fixed: Catch cases where the next line starts a new block
+                is_next_block = next_line_str.startswith('{')  
                 
                 if is_next_field or is_array_element or is_next_block:
                     all_errors.append({
@@ -207,11 +191,10 @@ def validate_json_file(file_path):
                         "column": len(line)
                     })
 
-    # Check 4: Unclosed Braces or Brackets at End Of File (EOF)
     if open_braces != 0:
         all_errors.append({
             "file": str(file_path),
-            "error": f"Mismatched curly braces {{}}. Open count remaining: {abs(open_braces)} (Check missing structural brackets)",
+            "error": f"Mismatched curly braces {{}}. Open count remaining: {abs(open_braces)}",
             "line": len(lines),
             "column": "End of file"
         })
@@ -223,22 +206,45 @@ def validate_json_file(file_path):
             "column": "End of file"
         })
 
-# --- Main Runtime Execution Pipeline --- 
-path1 = Path(filepath1)
-if path1.exists() and path1.is_dir():
-    for file in path1.iterdir():
-        validate_json_file(file)
+print(f"Starting Environment-Aware scan across VCS directories...")
+print(f"Target Environment: [{env}] | Target Client: [{tenantcode}]")
+targets_found = False
 
-validate_json_file(filepath2)
-validate_json_file(filepath3)
+for root, dirs, files in os.walk(workdir):
+    normalized_root = Path(root).as_posix()
+    
+    apps_target_part = f"config/apps/{env}/{tenantcode}"
+    if apps_target_part in normalized_root:
+        targets_found = True
+        for file in files:
+            file_full_path = Path(root) / file
+            print(f" [MATCHED-{env}] Validating App Config: {file_full_path}")
+            validate_json_file(file_full_path)
 
+    tenant_target_part = f"config/tenants/{env}/{tenantcode}"
+    if tenant_target_part in normalized_root:
+        if "tenant.conf" in files:
+            targets_found = True
+            tenant_file = Path(root) / "tenant.conf"
+            print(f" [MATCHED-{env}] Validating Tenant File: {tenant_file}")
+            validate_json_file(tenant_file)
 
-# 5. Final Report Generation & TeamCity Build Control Logic
+    portfolio_target_part = f"portfolios/{env}"
+    if portfolio_target_part in normalized_root:
+        if "portfolios.conf" in files:
+            targets_found = True
+            portfolio_file = Path(root) / "portfolios.conf"
+            print(f" [MATCHED-{env}] Validating Portfolio File: {portfolio_file}")
+            validate_json_file(portfolio_file)
+
+if not targets_found:
+    print(f"Warning: No valid configuration targets found for Client '{tenantcode}' explicitly inside the '{env}' environment folders.")
+
 if all_errors:
     BLUE_COLOR  = "\033[94m"
     RESET_COLOR = "\033[0m"
     
-    print(f"\n{BLUE_COLOR}🔹 Validation Report - Found {len(all_errors)} errors{RESET_COLOR}")
+    print(f"\n Validation Report - Found {len(all_errors)} errors{RESET_COLOR}")
     
     col_widths = [50, 6, 12, 65]
     row_format = "│ {{:<{}}} │ {{:<{}}} │ {{:<{}}} │ {{:<{}}} │".format(*col_widths)
@@ -270,5 +276,5 @@ if all_errors:
     sys.exit(1)
 
 else:
-    print("\n Result: All JSON configuration targets are perfectly valid!")
+    print("\n Result: All detected JSON configuration targets are perfectly valid!")
     sys.exit(0)

@@ -445,6 +445,64 @@ DAY 15: Signals & Inter-Process Communication (IPC)
 - Internals: Architectural difference between SIGTERM (graceful shutdown) and SIGKILL (hard drop).
 - Practice: Managing background jobs using bg, fg, jobs, and nohup.
 
+Processess executing in the operating system may be either independent process or co-operating process
+
+Indepenent Process - The process which can not be affect or get affected by another process in operating system
+Co-operating process - These process can be affected or get affected by another process in operating system - Any process that shares data with other process is coopearating process
+There are several reasons for providing an eviroment that allows process cooperation
+1 - Information sharing
+2 - Computation speedup (breaking down into subtasks and run them concurrently)
+3 - Modularity (Design system by dividing system into module)
+4 - Convinience 
+
+There are two fundamental Models of interprocess communication
+1 - Shared memory
+2 - Message passing
+
+1 - Shared memory 
+Process A writes data in shared memory region and the process B can read from there
+2 - Message passing
+Process A passes messages to kernal and kernal will send it to process B
+
+Process signals are the signals that are used to control the process
+kill -l - list of all the process signals
+
+SIGTERM - terminate any process - kill
+SIGKILL - forcefully terminate - kill -9 
+SIGINIT - interupt any running process - ctrl + c
+SIGSTP - ctrl + z - moves process in stopped state
+
+A graceful kill (SIGTERM) politely requests a process to save its data and shut down cleanly, while a forceful kill (SIGKILL) immediately terminates the process through the OS kernel, risking data corruption.
+
+Process Managment
+jobs - shows actively running jobs
+bg - resume jobs to the background
+fg - resume job to the foreground
+bg job id
+fg job id
+
+
+if you execute any job on terminal and the you interupt it by ctrl + z then the job gets intupreted
+then if you check with jobs command that job will show in stopped state
+if you use bg then it will resume that job in background
+if you use fb then it will resume that job in foreground
+
+Nice value -
+Niceness scale goes from -20 to 19.
+Lower the number more the priority will get
+nice number sets priority of process before that start of process
+nice -n nice_number process
+
+renice 
+same as nice value but renice changes the nice value of already running process
+renice -n nice_number -p processID (-g grp - to change priority related of group) -u user
+
+nohup - 
+It you want process keep running even after closing your terminal
+nohup process & - gives output in nohup.out file
+nohup process & > /dev/null 2>&1 & - to store no output
+
+
 DAY 16 & 17: Virtual File System (VFS) & Inodes
 - Concept: VFS abstraction layer. Inode structure (Metadata vs Data blocks).
 - Internals: Why deleting a large file doesn't free up space if a process keeps the File Descriptor open.

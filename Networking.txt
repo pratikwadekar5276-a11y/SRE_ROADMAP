@@ -1,0 +1,303 @@
+Networking
+===================================================================
+          NETWORKING FOR SRE - 10 DAYS GOOGLE LEVEL PLAN
+          Time: 07:15 AM to 08:15 AM | Focus: Packet Level Engineering
+===================================================================
+
+DAY 1: The OSI & TCP/IP Stack (The Blueprint)
+- Concept: Conceptual layers (OSI) vs Practical implementation (TCP/IP).
+- SRE Focus: Understanding Data Encapsulation and Decapsulation. How a packet changes from Layer 7 to Layer 2.
+- Practice: Inspecting Network Interfaces on Mac Terminal using 'ifconfig' / 'ip addr'.
+
+OSI (Open System Interconnection)-
+OSI model helps us to understand how data is transfered from one computer to another
+OSI Model has 7 layers
+application (layer 7)
+presentation
+session
+transport
+network
+data link
+physical(layer 1)
+
+Each layer is package of protocols
+
+Application Layer -
+Application layer is used by network applications means the applications which need need internet (chrome, safari, edge)
+eg http, https , sftp , ftp, smtp, telnet
+Layer 7 Load Balancers (like AWS ALB or Nginx) 
+these load balancers operate at this layer because they route traffic based on HTTP headers, URLs, cookies, and website paths.
+Application layer generates message/data
+
+Presentation layer - 
+Presentation layer receives data from application layer
+This data is form of characters and numbers
+Presentation layer converts this data into machine understandable binary data
+before data is transmitted presentation layer reduces number of bits that are used to represent original data and this process is called as data compression
+Data compression reduced the amount of space that needs to store the file
+To maintain integrity of data transfer the data is encrypted. 
+Encryption enhances the security of sensitive data
+sender side data is encrypted and receiver side data is decrypted
+SSL (secure sockets layer) protocol is used in presentation layer to encryption and decription of data
+Presentation layer performs three tasks
+1 - translation
+2 - Data compression
+3 - encryption/Decryption
+
+Session Layer
+Session layer is used to setting up and managing connections, enabling sending and receiving of data followed by termination of connections or session
+session layers has its own helpers called api (application programming interface)
+Just before a session or connection established with the server, server performs a function called authentication
+authentication is the process which defines who you are? 
+for this you need to enter your username and password after it matches server esatablish the connection to your server
+after authentication, authorization is performed 
+authorization is the precess which used to determines what privilleges do you have on server (access a file)
+both authorization and authentication is performed by session layer
+session layers keep a track of file that are being downloaded eg web page contains text and images these data is stored as seperate file on server 
+These files are received in the form of data packets
+session layer keeps a track of which data packet belong to which file eg text and images
+session layers helps in session managment authentication and authorization
+In modern microservices architectures, Authentication and Authorization are actually handled at the Application Layer using JWT (JSON Web Tokens) or OAuth protocols.
+
+Transport layer
+Transport layer controls the reliability of of communication through segmentation, flow control and error control
+Segmentation 
+In segmentation data received from session layer is divied into small data units called segments 
+Each segment contains source and destinations port number and sequence number
+Port number help to redirect each segment to correct application 
+Sequence number to reassamble segments in correct order to form correct message at receivers
+Flow control
+Transport layer control the amount of data being transmitted
+suppose these is data transfer is going on between server 1 and server 2 
+server 1 is transmitting data from speend of 50mbps and server 2 can receive data only upto 10mbps
+then server 2 informs 1 that i can receive data till 10 mbps speed reduce data transmission speed or data can be lost
+if server 1 is trasmitting data from speed 5 mbps and server 2 can receive data upto 10mbps then server 2 informs server 1 that it can recevive data upto 10 mbps to maintain system performance
+Error control 
+If some data does not arrive at destination transport layer uses automatic repeat request which retransfers lost or corrupt data
+A group of bits called checksum to added each segment by transport layer to check and find out corrupted segment
+Protocols - tcp, udp
+Transport layer performs two types of service
+1 - connection-oriented transmission -- done via tcp
+2 - connectionless transmission -- done via udp
+UDP is fater than tcp because it does not provide any feedback whether data is really delivered whereas tcp provides feedback whether data is devlivered or not therefore lost data can retransimted 
+UDP used where it does not matter data is delivered or not 
+eg video streaming songs games
+tcp is used where full data delivery is Multiuser
+eg www. email ftp
+
+Network layer
+transport layer transfers data segments to network layer
+network layers works for the trasnsmission of received data segments from one server to another located in different networks
+data units in network layer are called packets
+It is layer where routers reside
+funtion of network layer is 
+logical Addressing - ipv4 vs ipv6 - 
+network layer assigns senders and receivers ip address to each segment to form an ip packet.
+ip address are assign to make sure each data packet transmiited to correct destination
+path determination -
+a computer can connected to internet server in a multiple ways
+path determination choose best possible path to data deliver from source to destination
+routing - 
+routing is method of moving data packets from source to destination 
+and it is based on logical address format of ipv4 and ipv6
+
+Data link layer
+Data link layer receives data from network layer
+data packets contains ip address of sender and receiver
+There are two kinds of addressing 
+1 - logical addressing
+done at network layer
+where sender and receiver address ip assgines to each segment to form data packet
+2 - physical addressing
+done at data link layer
+where mac address are assiged to each segment to form a frame
+mac1-mac2-ip1-ip2-segment-tail
+mac address is 12 digit alpha numeric number embedded in network interface card of your computer provides by manufacture
+data unit in data link layer called frame
+ARP is responsible for mapping a known Layer 3 IP address to a Layer 2 physical MAC address so data can move inside a local network.
+
+Physical layer
+physical layer coverts binary into singal and transmit over local media 
+eg air fiber, optical fiber
+
+Sender server perfomrs actions from application layer to phycal layer but on the other hand receivers server perfrom actions from physical layer to application layer
+
+Travel of data from layer 7 to layer 1 called encapsulation and travel of data from layer 1 to layer 7 called Decapsulation
+
+TCP/IP model
+ TCP/IP is set of protocols which support network communication
+ network - 
+ two servers connected each other via lan forms a network
+ communication - 
+process of sending message from one place to another through a wired or wireless medium is known as communication
+These messages are not sent as single unit.
+They are broken into small data units
+These units are transmitted via network and restored at receivers end into origianl message
+In tcp/ip protocols suite tcp breaks messages into small data units called segemts and hands them off to ip which deals with routing segments through network to their final destination
+TCP module in the receiver combines the segments to form orignal message
+
+TCP (transmission control protocol) and IP (internet protocol)
+alternative to tcp is udp (user datagram protocol)
+TCP is highly reliable but slow UDP is less reliable but fast 
+TCP/IP is a network model designed to support network communication even if the computers are from different manufactures
+There is one more model called OSI model. It is primerily used for research purpose. on the other hand tcp/ip is a practical model developed to meet the needs of the origianl internet design.
+As per name tcp/ip protocols seems to be set of two protocols however it consist of numerous protocols bundle at differnt layers
+osi model is theory part and tcp/ip model is actual implementation
+
+==================================================================================================
+
+ DAY 2: IP Addressing, Subnetting & Routing (CIDR) and VPN
+- Concept: IPv4 vs IPv6, Subnet Masks, Classless Inter-Domain Routing (CIDR).
+- Internals: How routers make packet-forwarding decisions using routing tables.
+- Practice: Analyze the system routing table using 'netstat -rn' or 'route -n'.
+
+IP addressing
+Host is connected to the internet via communication link
+Boundtry between link and host is called interface
+typically host has only one interface and router has multiple Interfaces
+both host and router send and receive data via these Interfaces
+if possible only if the interfaces have their addresses
+The address they have called ip address
+IP address is the link with the interface and not with the host and router
+we know that binary number consist of 0 and 1 
+if we write 00100101 length of these is 8 bits
+similaryly ipv4 address has 32 bits in length
+each 8 bits represent 1 byte in length hence 32 bits represent 4 byte hence it is called ipv4
+each byte is written in the form of decimal numbers seperated with dosent
+this notation of ipv4 is called dotted decimal notation
+A portion ot this ip address is determined by the subnet to which device is connected
+if ip is 122.1.3.4/16 then first 2 part is for subnet and 2 part is host machine (first 16 bits are common)
+if ip is 122.1.3.4/24 then first 3 part is for subnet and 1 part is host machine(first 24 bits are common)
+The network connecting the host interfaces and router inferfaces having same ip address format is called subnet and here it is represented as 223.1.1.0/24 where /24 is known as subnet mask it means that all interfaces in this subnet have same leftmost 24 bits
+Organizations can have multiple subnets
+In the global internet the IP addressing is handled by classless interdomain routing or CIDR address assignment stratergy
+In CIDR addressing the subnet address is generalised to a.b.c.d/x wherer x indicates number of bits from left
+The first x bits called network prefix and it will same for all device present in that particular subnet
+if you want to know how many device you can associate with subenet
+there is formula y = 32-x and 2^y devices you can associate with a subnet
+and range stat from 0.0 to 255.255
+
+Routing
+Internet is giant highway of pathways for data to travel to their destination
+And in between these pathways are devices called routers
+Routers routes data on the internet so data can reach its destination and routers route data by using routing tables
+Routing table is file that contains set of rules that shows information on what path of data packet takes to its destination
+so data packet arrives at the router and router will look at its routing table and find out where to forward data packet along with the best path
+Routing table is same as road map or navigation
+routers has the ability to allow communication between the networks
+Routing tables are populated in three ways 
+
+There are two types of devliery in network
+direct delivery and indirect delivery
+Direct delivery
+Direct delivery occurs when source and destination of the packets are located in same physical network
+Indirect delivery
+If desination is not in the same network as source host then the delivery known as indirect delivery
+In indirect delivery the packet goes from router to router until it reaches it connected to the same physical network as its final destination
+In indirect delivery the sender uses the destination ip address and routing table to find ip address of the next router to which packet should be delivered
+The sender the uses ARP (address resolution protocol) to find physical address of next router
+means basically if two servers are in different network wants to send and receive data works as server 1 will sent data to default router then router will check in route table which interface matches to destination ip address with the help of ARP like this way data gets received at destination server
+
+same network
+Two or more devices are said to be in the "Same Network" when their network prefixes (determined by the Subnet Mask / CIDR block) are identical. They can communicate directly with each other at Layer 2 (Data Link Layer) using MAC addresses and ARP, without needing a router or a default gateway.
+different network
+different network
+Devices are said to be in "Different Networks" when their network prefixes do not match. They cannot communicate directly. To send a packet from one network to another, it mandatory to pass through a Layer 3 device, which is a Router (or Default Gateway), to perform routing.
+
+devices with same subnet can be considerd as in same network and different subnetes considerd as differnt Network
+devices in same vpc does not mean they are in same network but they can communicate with each other via route table
+vpc by default allows communication between two subnets unless you explictly deny communication
+
+netstat and route
+netstat - used for network troubleshooting and monitoring
+netstat (network statistics)
+netstat command in linux that displays
+- network connections for tcp and udp
+- routing tables
+- number of network interfaces
+- network protocol statics
+
+netstat -an | grep port_number
+checks connection is established on particular port or not
+
+netstat -putan | grep port_number 
+checks how many services are there esatablisehed or listen on particular port
+
+netstat -a - to see all sockets
+netsat -at - to list all tcp ports
+netstat -au - to list all udp ports
+netstat -6at - to list all tcp v6 ports
+netstat -l - to list all listening port
+netstat -rn is a fundamental network troubleshooting command used to display the operating system kernel's Layer 3 routing table. It tells you exactly how your server routes data packets—whether a packet should stay inside the local subnet or be sent to an external router (Gateway) to reach the outside internet.
+Breaking Down the Flags:
+netstat: Network Statistics. A legacy CLI tool used for monitoring network connections and routing tables.
+-r: Routing. Instructs the tool to fetch and display the kernel's internal IP routing table.
+-n: Numeric. Forces the command to show raw IP addresses and ports instead of resolving them into human-readable hostnames (like localhost or gateway). This bypasses DNS lookups, making the command execute instantly.
+
+LISTEN Port: The server is passively waiting on a specific port for new incoming connection requests (before the TCP 3-way handshake).
+
+ESTABLISHED Port: The server has successfully completed the TCP 3-way handshake with a specific client, and an active, bi-directional data transfer channel is open.
+
+basically consider if person a coming to person b house from door. Now door is listen port when a enter house to meet person b the port is esablished but the door is still open means it in also in listen to make welcome of person c. person a after meeting person b leaving the house connection gets closed 
+
+route -n
+Example Output:
+Bash
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         192.168.1.1     0.0.0.0         UG    100    0        0 eth0
+192.168.1.0     0.0.0.0         255.255.255.0   U     100    0        0 eth0
+Understanding the Columns:
+Destination: The destination network or host IP address.
+Gateway: The next-hop router IP address.
+0.0.0.0 means no gateway is required. The destination is in your Same Subnet (Local LAN), so the kernel talks directly to the machine via Layer 2 ARP.
+An actual IP (e.g., 192.168.1.1) is your Default Gateway. External internet traffic is sent here.
+Genmask: The subnet mask for the destination network.
+0.0.0.0 with a destination of 0.0.0.0 denotes the Default Route (the entire outside internet).
+Flags: Indicates the status of the route:
+U (Up): The route is active.
+G (Gateway): The route uses a gateway/router.
+Iface (Interface): The specific network interface card (e.g., eth0) through which the packet will physically leave the server.
+=======================================================================================================
+DAY 3: TCP Deep Dive (Part 1) - The 3-Way Handshake
+- Concept: Transmission Control Protocol (Connection-Oriented state machine).
+- Internals: Deep look at TCP Flags (SYN, ACK, FIN, RST). What happens step-by-step during connection establishment.
+- Practice: Simulating connections and inspecting active states (LISTEN, SYN_SENT, ESTABLISHED) using 'ss -antp'.
+
+
+
+DAY 4: TCP Deep Dive (Part 2) - Flow Control & Termination
+- Concept: TCP Windowing, Congestion Control, and Connection Teardown.
+- Internals: The 4-step termination sequence. Understanding the dangerous 'TIME_WAIT' and 'CLOSE_WAIT' states (Classic SRE interview debugging).
+- Practice: Identify stuck connection states and force resets using network tools.
+
+DAY 5: UDP vs TCP & Core Layer 4 Ports
+- Concept: User Datagram Protocol (Connectionless) vs TCP. When to use what (DNS/Streaming vs HTTP/SSH).
+- Practice: Scanning open TCP and UDP ports on local systems safely using 'nc' (Netcat).
+
+DAY 6: DNS (Domain Name System) - The Internet's Phonebook
+- Concept: Hierarchical DNS structure (Root, TLD, Authoritative Nameservers).
+- Internals: Recursive vs Iterative queries. DNS Record Types (A, AAAA, CNAME, MX, TXT) and TTL (Time To Live) caching dynamics.
+- Practice: Trace a complete DNS resolution path using 'dig +trace google.com' and debug local DNS caches.
+
+DAY 7: HTTP/HTTPS & The Architecture of a Web Request and websockets
+- Concept: HTTP methods, Status Codes (2xx, 3xx, 4xx, 5xx), HTTP/1.1 vs HTTP/2 vs HTTP/3.
+- Internals: The ultimate interview question: "What happens when you type a URL in a browser?" (From DNS lookup to TCP handshakes, TLS negotiation, and DOM rendering).
+- Practice: Interrogating HTTP headers using 'curl -Iv https://google.com'.
+
+DAY 8: TLS/SSL Handshake & Network Security
+- Concept: Symmetric vs Asymmetric encryption, Certificates (CA), Public/Private key pairs.
+- Internals: How a client and server establish a secure HTTPS tunnel (TLS 1.2/1.3 Handshake execution).
+- Practice: View certificate parameters and cryptographic handshakes via 'openssl s_client'.
+
+DAY 9: Load Balancers, Proxies & Firewalls
+- Concept: Traffic management. Layer 4 Load Balancing (IP/Port based) vs Layer 7 Load Balancing (URL/Cookie based).
+- Internals: Reverse Proxy vs Forward Proxy. Access Control Lists (ACLs) and stateful firewalls.
+- Practice: Understand traffic routing and basic network security rules.
+
+DAY 10: Packet Capturing & Live SRE Troubleshooting Simulation
+- Concept: Sniffing wires and analyzing packet flows.
+- Tools: Introduction to 'tcpdump' (CLI) and 'Wireshark' (GUI).
+- Practice: Run a live packet capture on Mac Terminal using tcpdump, filter by port 80/443, and read the raw hex output. Solve 2 complex network latency interview scenarios.
+
+===================================================================s

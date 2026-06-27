@@ -223,8 +223,28 @@ with open("myfile.txt", "r") as f:
 💡 उद्दिष्ट: रिअल-वर्ल्ड फाइल्स, सिस्टम टूल्स आणि ऑटोमेशन स्क्रिप्ट्स हाताळणे.
 
 - DAY 31: The OS Module: Navigating filesystems, creating folders, and checking paths.
+the OS module in python is built in library that provides functions for interaction with operating system
+It allows you to perform a wide variety of taks such as reading writing files interacting with file system
+and running system commands
+
+
 - DAY 32: The Sys Module: Reading command-line arguments passed to your script via sys.argv.
+sys is built in library
+sys.argv is parameter provides in sys module
+"In Python, sys.argv is a built-in list within the sys module that captures and stores the command-line arguments passed to a script during execution, where index 0 represents the script name itself, and subsequent indices capture the input parameters sequentially as strings."
+
+"In Python, sys.exit() is a built-in function within the sys module used to explicitly terminate the runtime execution of a script and return an integer exit status code back to the invoking environment or CI/CD orchestrator (where 0 denotes a successful run and non-zero values denote failure conditions)."
+when you write sys.exit() the whole python program gets terminated
+
 - DAY 33: Automation with Shutil: Moving, copying, and renaming files and whole directories automatically.
+shutil is a python module that provides a higher level interface for working with file directories . 
+The name shutil is short form of shell utilitiy.
+It provides a convient and efficient way to automate tasks that are commonly performed on files and directories.
+shutil.copy('src','dest') - this function copies file from one directory to another and if file is already present it will replace that file.
+shutil.copy2('src','dest') - copy file as well as metadata
+shutil.copytree(src,dest) - copy total folders and files inside it
+shutil.move(src,dest) - moves file from one folder to another
+
 - DAY 34: Working with CSV Files: Reading and writing structured spreadsheet rows natively.
 - DAY 35: Working with JSON Data: Parsing API-style strings into Python dictionaries and vice-versa.
 - DAY 36: Scripting with YAML: Reading configuration files used widely in modern infrastructure.
