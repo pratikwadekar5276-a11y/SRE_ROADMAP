@@ -236,6 +236,7 @@ sys.argv is parameter provides in sys module
 "In Python, sys.exit() is a built-in function within the sys module used to explicitly terminate the runtime execution of a script and return an integer exit status code back to the invoking environment or CI/CD orchestrator (where 0 denotes a successful run and non-zero values denote failure conditions)."
 when you write sys.exit() the whole python program gets terminated
 
+
 - DAY 33: Automation with Shutil: Moving, copying, and renaming files and whole directories automatically.
 shutil is a python module that provides a higher level interface for working with file directories . 
 The name shutil is short form of shell utilitiy.
@@ -251,6 +252,10 @@ shutil.move(src,dest) - moves file from one folder to another
 - DAY 37: Regular Expressions (Regex Basics): Finding patterns like emails or IP addresses in text blocks.
 - DAY 38: Text Log Parsing Project: Writing a script to scan a server log and pull out all lines with "ERROR".
 - DAY 39: Introduction to the Subprocess Module: Running basic Linux system commands from Python.
+In Python, the subprocess module is the recommended way to invoke and interact with system commands. It replaces older functions like os.system because it provides better control over:
+
+
+
 - DAY 40: Subprocess Output Manipulation: Capturing stdout and stderr from system commands.
 - DAY 41: Introduction to Web Requests: Installing the 'requests' library to talk to the internet.
 - DAY 42: Consuming REST APIs: Sending GET requests to fetch data from live public web sources.
