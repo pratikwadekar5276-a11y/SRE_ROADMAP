@@ -146,7 +146,7 @@ osi model is theory part and tcp/ip model is actual implementation
 
 ==================================================================================================
 
- DAY 2: IP Addressing, Subnetting & Routing (CIDR) and VPN
+ DAY 2: IP Addressing, Subnetting & Routing (CIDR) 
 - Concept: IPv4 vs IPv6, Subnet Masks, Classless Inter-Domain Routing (CIDR).
 - Internals: How routers make packet-forwarding decisions using routing tables.
 - Practice: Analyze the system routing table using 'netstat -rn' or 'route -n'.
@@ -261,15 +261,179 @@ Iface (Interface): The specific network interface card (e.g., eth0) through whic
 =======================================================================================================
 DAY 3: TCP Deep Dive (Part 1) - The 3-Way Handshake
 - Concept: Transmission Control Protocol (Connection-Oriented state machine).
+
+TCP is a protocol that guarantees reliable communication by establishing a connection, numbering bytes, acknowledging received data, retransmitting lost data, and delivering data in the correct order.
+
 - Internals: Deep look at TCP Flags (SYN, ACK, FIN, RST). What happens step-by-step during connection establishment.
 - Practice: Simulating connections and inspecting active states (LISTEN, SYN_SENT, ESTABLISHED) using 'ss -antp'.
 
+sequence number
+It tracks what is sent (bytes) by server 1
+Acknolegment number
+It tracks what is received (bytes) by server 2
 
+sever 1 will sent a bytes with sequence number 101 added in tcp header of bytes when server 2 receive the bytes it will sent Acknolegment number 102 that bytes is received and you can sent next bytes 
+then serever 1 sents next bytes with sequence numner 102 and then the transmission works likewise
+
+If Server 1 sends a byte with Sequence Number 101, then Server 2 sends an Acknowledgment Number 102. The underlying meaning is that byte 101 has been received successfully, and Server 1 can now send byte 102.
+this is scenario of 1 byte 
+now suppose server 1 sents 200 bytes with sequence number 101 then server 2 sends Acknowledgment number 301 that means 200 byes are received you can sent next byes
+server 1 multiple byte in one go instead 1 byte at a time to reduce network traffic
+Sequence / Acknolegment numbers are measures of byes sent not packet
+packet is collection of multiple bytes
+
+Everytime tcp sends something it stores a copy of what is sent in cache for duration of retransmission timeout
+If no ack is received segment is resent
+
+suppose server 1 sent packet of 100 bytes with sequence number 101 then the copy of that 100 bytes in buffer gets created until server 2 sends Acknolegment number  when server 2 sends Acknolegment number 201 means 100 bytes are received then the 100 bytes stored in buffer gets deleted
+
+suppose server 1 sent packet of 100 bytes with sequence number 101 then the copy of 100 bytes gets stored in buffer until Acknolegment number received but due to some reason packet of 100 bytes is not delivered at server 2 then server 2 will not able to send Acknolegment number to server 1 then server 1 waits for response till retransmission timout gets over and once it over server 1 again retransmit packet of 100 byetes to server 2 with same sequence number
+
+if server 1 send packet of 100 bytes with sequence number 101 but due to some reason only first 50 bytes received then serevr 2 sends Acknolegment number 151 that first 50 files received you can send files from 151
+
+Initially tcp sent an ack after every received segment 
+delayed Acknolegment - sends Acknolegment every other segment
+if you send 2 packets of 100 byetes each with sequence numner 101 and 201 then server 2 will send Acknolegment 301 cummulative for both packets
+
+window size limit - how much unacknolegde data you can send
+window size set by server 2
+
+Window Size specifies the maximum number of unacknowledged bytes that the sender is allowed to transmit before it must wait for an acknowledgment.
+window size is intended in acknowledgment when server 2 received bytes
+you can dynamically update window size through transmission
+Delayed ACK is a TCP optimization where the receiver intentionally waits for a short period before sending an acknowledgment, hoping it can acknowledge multiple received segments with a single ACK.
+
+tcp is directional
+both servers can sends data have sequence number and acknowledgment number
+
+Initial sequence number isn - this number can be choose by sender randomly
+must be shared at connection establishment (3 way handshake)
+
+Three way handshake
+* SYN → “Start the connection.”
+* ACK → “I received what you sent.”
+every tcp conversation starts with conept known as three way handshake
+in three way handshake 4 events occurs
+server 1 initiate  tcp connection with server 2 by sending SYN (synchronise request) with initial sequence number of X
+server 2 will confirm that it received SYN request and it acknowledge ACK that it is ready for receiving packet of bytes X+1
+also server 2 picks intial sequence number which can be random Y and sends SYN request to server 1
+server 1 sends ack number Y+1 that it received SYN request of server 2
+
+server 1 - SYN (sequence = 100 and ack = 0000) and check window size as well
+server 2 - SYN ACK (sequence = 500 and ack = 101)
+server 1 - ACK (ack = 501)
+
+window size can be set initially and can change dyanamically no need both server needs to have same window size
+
+TCP has two options for closing a connection
+1 - Graceful method (FIN flag)
+2 - ungraceful method (RST flag)
+
+graceful connection closing with FIN flag 4 way
+sever 1 will send flag FIN that it has finished sending data with sequence number x
+server 2 will acknowledge ACK that it received data x+1
+server 2 will send FIN  flat with it has finished with sending data with Y
+server 1 will ACK that it received data with Y+1
+not necessary these 4 events needs to happen sequenceciallay 
+
+when tcp sends FIN flag it might send 0 byte data packet but tcp assumes that it has sent 1 byte 
+that additional byte is known as phantom byte
+
+ungraceful connection closing with RST flag 1 way
+suppose situation when tcp connection is established but server 2 was not expecting data packets from server 1 or server 1 sends wrong packets to server 2 then RST flag can use
+one of both server can use this flat that something is went wrong and connection needs to closed
+
+ss command -
+ss is used to dump socket statistics
+It allows information similar to netstat.
+It can display more tcp and state information than other tools
+
+ss -lt - shpw tcp connection
+ss -au - show all udp connections
+ss -s  - 
+ss -4  - show ipv4 connection
+ss -6 shows all ipv6 connection
+
+TCP Connection States
+LISTEN: The state of a server socket that is waiting for incoming connection requests on a specific port.
+
+SYN_SENT: The state of a client that has sent a SYN (synchronize) packet and is waiting for a SYN-ACK response from the server to initiate the connection.
+
+ESTABLISHED: The state representing an active, fully functional connection where data transfer can occur in both directions.
+
+ss -antp: A powerful Linux command-line utility used to examine socket statistics.
+
+-a: Shows all sockets.
+
+-n: Displays numeric addresses and port numbers.
+
+-t: Filters for TCP sockets.
+
+-p: Displays the process (PID) using the socket.
+
+The TCP (Transmission Control Protocol) header is a set of fields at the beginning of every TCP segment. It contains the control information necessary to establish, maintain, and terminate connections, as well as ensure the reliable, ordered delivery of data.
+
+
+
+=======================================================================================
 
 DAY 4: TCP Deep Dive (Part 2) - Flow Control & Termination
 - Concept: TCP Windowing, Congestion Control, and Connection Teardown.
 - Internals: The 4-step termination sequence. Understanding the dangerous 'TIME_WAIT' and 'CLOSE_WAIT' states (Classic SRE interview debugging).
 - Practice: Identify stuck connection states and force resets using network tools.
+
+Flow control in tcp
+Flow control explain how transfer speed of data is adjusted in between two computers between data transmission
+IN tcp flow control is maintained by following key tools 
+window scaling
+advertisement window size
+persistant timer
+
+server 1 is transmitting data from speend of 50mbps and server 2 can receive data only upto 10mbps
+then server 2 informs server 1 through feeback that i can receive data till 10 mbps speed reduce data transmission speed or data can be lost
+if server 1 is trasmitting data from speed 5 mbps and server 2 can receive data upto 10mbps then server 2 informs server 1 through feedback that it can recevive data upto 10 mbps to maintain system performance
+
+tcp has 3 stages
+connection establishment
+data transfer 
+connecton termination
+
+window scaling
+server 1 will sent window size w1 to server 2 and server 2 will ack and send window size of server 2 to server 1
+
+suppose server 2 has window size of 2000 bytes then server 1 sends some data of 1000 bytes to server 1 then server 2 sends signal to server 1 that 1000 bytes from buffer has been consumed and now 1000 byetes in buffer is remaining this is called advertisement window size now consider again server 1 sends data of 1000 byetes to server 2 now server 2 will have window size 0 bytes and then suppose data of 2000 byetes if transfered from transport layer to application layer now window size of server 2 is 2000 byes but server 1 dont know that server 2  has 2000 byetes window size avaialble so there persistant timer comes in scenario after persitant timer server 1 will send signal to server 2 that how much byetes is available in server 2 so that server 1 can transmit the data and then server 2 sends signal about reamianing window size
+
+Congestion control in tcp
+basics on Congestion control
+At the network layer congestion control can be done by icmp protocol which indicates the congestion at the single router
+At the transport layer congestion control can be done by tcp which indicates the congestion at complete computer network
+
+data transmission is depends on window size 
+lower the window size lower the data transfer higher the window size higher the data transfer
+
+congestion control has 3 phase
+1 - slow start phase
+We will be initiating window size with minimum value
+window size will grow exponentially it will get multiplied by 2 if there is no congestion upto threshhold value of the window
+server 1 will have window size 1 byte then it will transmit data to server 2 of 1 byte server 2 will send
+the acknowledgment if there is no congestion server 1 will increase its window size 2 bytes again transmit data likewise server 1 will increase its window size upto threshhold value
+2 - Congestion avoidance phase
+window size will increase linearly by 1 if there is no congestion in Network
+when window size will reach upto threashhold value then the window size will be start incrasing by 1 byte to avoid congestion
+3 - continuoysly congestion detection phase
+timeouts - severe congestion in network
+if suppose at partcular point of congestion avoidance phase congestion timer will start happening suppose at 40 byes then it will divide 40/2 and again start with slow start phase and now new threshold value is 20 bytes
+
+now consider if packet is loss in between after 24 and server 2 will send three dupack (three duplicate acknolegemts) then the window size is 24/2 and the window size will increase according to congestion avoidance phase
+
+there are 2 scenarios where minumun window size can be 1 or 2
+
+timeout means server 1 is not receiving any ack from server 2 and 3 dupack means server 2 sends ack value same for 3 times
+
+now consider server 1 finished tranmissting data to server 2 server 1 will send FIN signal to server 2 but server 2 is not sending any ACK because the connection is not closing (java,python,node)  because of this issue then the state goes in CLOSE_WAIT this usually happens because application forgot to call close function
+
+now all 4 stages of termination is completed but still for some time status is TIME_WAIT this is usual 
+It basically happens to check if there are any delayed packets from server 1 to server 2
 
 DAY 5: UDP vs TCP & Core Layer 4 Ports
 - Concept: User Datagram Protocol (Connectionless) vs TCP. When to use what (DNS/Streaming vs HTTP/SSH).
