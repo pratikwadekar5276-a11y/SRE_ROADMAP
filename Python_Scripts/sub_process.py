@@ -1,4 +1,8 @@
 import subprocess 
+import sys
+
+subject = sys.argv[1]
+date = sys.argv[2]
 
 subprocess.run(['ls','-lrt'])
 
