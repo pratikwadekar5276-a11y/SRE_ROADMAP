@@ -13,7 +13,7 @@ all_errors = []
 def validate_json_file(file_path): 
     path = Path(file_path)
     
-    # NEW: Print statement before scanning, showing relative path from workdir
+    # Print statement before scanning, relative to workdir
     rel_display_path = os.path.relpath(path, workdir)
     print(f"--- Scanning file: {rel_display_path} ---")
     
@@ -24,14 +24,14 @@ def validate_json_file(file_path):
     if path.is_dir():
         return
 
-    # 4. Full Original Logic preserved here
+    # Full Original Logic
     with open(path, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
     open_braces = 0
     open_brackets = 0
-
     cleaned_lines = []
+
     for idx, line in enumerate(lines, start=1):
         raw_line = line.strip()
         
@@ -155,7 +155,6 @@ print(f"Target Environment: [{env}] | Target Tenant: [{tenantcode}]")
 targets_found = False
 
 for root, dirs, files in os.walk(workdir):
-    # Using 'in' ensures it finds 'config' regardless of 'repo1' or 'repo2' prefix
     path_str = Path(root).as_posix()
     
     if f"/config/apps/{env}/{tenantcode}" in path_str:
@@ -176,9 +175,19 @@ if not targets_found:
     sys.exit(1)
 
 if all_errors:
+    col_widths = [50, 6, 12, 65]
+    row_format = "│ {:-<{}} │ {:-<{}} │ {:-<{}} │ {:-<{}} │".format(*col_widths)
+    
     print(f"\nValidation Failed! Found {len(all_errors)} errors.")
+    print("┌" + "─" * (col_widths[0]+2) + "┬" + "─" * (col_widths[1]+2) + "┬" + "─" * (col_widths[2]+2) + "┬" + "─" * (col_widths[3]+2) + "┐")
+    print(f"│ {'File Path':<{col_widths[0]}} │ {'Line':<{col_widths[1]}} │ {'Column':<{col_widths[2]}} │ {'Error Description':<{col_widths[3]}} │")
+    print("├" + "─" * (col_widths[0]+2) + "┼" + "─" * (col_widths[1]+2) + "┼" + "─" * (col_widths[2]+2) + "┼" + "─" * (col_widths[3]+2) + "┤")
+    
     for err in all_errors:
-        print(f"{os.path.relpath(err['file'], workdir)} (Line {err['line']}): {err['error']}")
+        clean_path = os.path.relpath(err['file'], start=workdir)
+        print(f"│ {clean_path[:col_widths[0]]:<{col_widths[0]}} │ {str(err['line']):<{col_widths[1]}} │ {str(err['column']):<{col_widths[2]}} │ {err['error']:<{col_widths[3]}} │")
+    
+    print("└" + "─" * (col_widths[0]+2) + "┴" + "─" * (col_widths[1]+2) + "┴" + "─" * (col_widths[2]+2) + "┴" + "─" * (col_widths[3]+2) + "┘")
     sys.exit(1)
 
 print("\nResult: All files are perfectly valid!")
