@@ -1,5 +1,4 @@
 import os
-import json
 import sys
 from pathlib import Path
 
@@ -70,6 +69,7 @@ def validate_json_file(file_path):
         open_braces += line_str.count('{') - line_str.count('}')
         open_brackets += line_str.count('[') - line_str.count(']')
 
+        # Original Complexity Logic
         is_arn = "arn:" in line_str.lower()
         is_apig = "apig." in line_str.lower()
         is_java_env = "java_tool" in line_str.lower() or is_immune
@@ -132,20 +132,12 @@ def validate_json_file(file_path):
                                 if starts_with_quote != ends_with_quote and not clean_value.endswith('=') and not is_entire_line_quoted:
                                     all_errors.append({"file": str(file_path), "error": "Malformed string value", "line": real_line_no, "column": len(line)})
 
-        if line_no == total_clean_lines:
-            continue
-
-        next_line_str = cleaned_lines[line_no]['text'].strip()
-        if next_line_str.startswith(('}', ']')):
-            continue
-
-        if line_str.endswith('}'):
-            if not line_str.endswith(',') and (":" in next_line_str or "=" in next_line_str or next_line_str.startswith('{')):
-                all_errors.append({"file": str(file_path), "error": "Missing comma after }", "line": real_line_no, "column": len(line)})
-        elif line_str.endswith('"') or line_str.rstrip(',').endswith('"') or line_str.endswith('}') or line_str.rstrip(',').endswith('}') or line_str.rstrip(',"').endswith('=') or should_bypass_quotes or clean_key == "Content-Security-Policy":
-            if not line_str.endswith(','):
-                if ":" in next_line_str or "=" in next_line_str or next_line_str.startswith(('"', '{')):
-                    all_errors.append({"file": str(file_path), "error": "Missing comma", "line": real_line_no, "column": len(line)})
+        if line_no < total_clean_lines:
+            next_line_str = cleaned_lines[line_no]['text'].strip()
+            if not next_line_str.startswith(('}', ']')):
+                if (line_str.endswith('}') or line_str.endswith('"')) and not line_str.endswith(','):
+                    if any(x in next_line_str for x in [":", "=", "{"]) or next_line_str.startswith('"'):
+                        all_errors.append({"file": str(file_path), "error": "Missing comma", "line": real_line_no, "column": len(line)})
 
     if open_braces != 0 or open_brackets != 0:
         all_errors.append({"file": str(file_path), "error": "Mismatched braces/brackets", "line": len(lines), "column": "EOF"})
@@ -175,19 +167,15 @@ if not targets_found:
     sys.exit(1)
 
 if all_errors:
-    col_widths = [50, 6, 12, 65]
-    row_format = "│ {:-<{}} │ {:-<{}} │ {:-<{}} │ {:-<{}} │".format(*col_widths)
-    
     print(f"\nValidation Failed! Found {len(all_errors)} errors.")
-    print("┌" + "─" * (col_widths[0]+2) + "┬" + "─" * (col_widths[1]+2) + "┬" + "─" * (col_widths[2]+2) + "┬" + "─" * (col_widths[3]+2) + "┐")
-    print(f"│ {'File Path':<{col_widths[0]}} │ {'Line':<{col_widths[1]}} │ {'Column':<{col_widths[2]}} │ {'Error Description':<{col_widths[3]}} │")
-    print("├" + "─" * (col_widths[0]+2) + "┼" + "─" * (col_widths[1]+2) + "┼" + "─" * (col_widths[2]+2) + "┼" + "─" * (col_widths[3]+2) + "┤")
-    
+    # Safe table printing
+    print("+" + "-"*52 + "+" + "-"*8 + "+" + "-"*14 + "+" + "-"*67 + "+")
+    print(f"| {'File Path':<50} | {'Line':<6} | {'Column':<12} | {'Error Description':<65} |")
+    print("+" + "-"*52 + "+" + "-"*8 + "+" + "-"*14 + "+" + "-"*67 + "+")
     for err in all_errors:
         clean_path = os.path.relpath(err['file'], start=workdir)
-        print(f"│ {clean_path[:col_widths[0]]:<{col_widths[0]}} │ {str(err['line']):<{col_widths[1]}} │ {str(err['column']):<{col_widths[2]}} │ {err['error']:<{col_widths[3]}} │")
-    
-    print("└" + "─" * (col_widths[0]+2) + "┴" + "─" * (col_widths[1]+2) + "┴" + "─" * (col_widths[2]+2) + "┴" + "─" * (col_widths[3]+2) + "┘")
+        print(f"| {clean_path[:50]:<50} | {str(err['line']):<6} | {str(err['column']):<12} | {str(err['error']):<65} |")
+    print("+" + "-"*52 + "+" + "-"*8 + "+" + "-"*14 + "+" + "-"*67 + "+")
     sys.exit(1)
 
 print("\nResult: All files are perfectly valid!")
