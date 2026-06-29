@@ -474,6 +474,12 @@ SIGSTP - ctrl + z - moves process in stopped state
 
 A graceful kill (SIGTERM) politely requests a process to save its data and shut down cleanly, while a forceful kill (SIGKILL) immediately terminates the process through the OS kernel, risking data corruption.
 
+This is also what many systems do automatically. For example, when stopping a container, the runtime first sends SIGTERM and waits for the application to exit gracefully. If it doesn’t exit within the configured timeout, it sends SIGKILL to force termination.
+
+SIGTERM is a graceful termination signal that allows a process to perform cleanup before exiting. SIGKILL is a forceful termination signal sent by the kernel that immediately stops a process without allowing any cleanup or signal handling.
+
+Always send SIGTERM first because it allows the application to shut down gracefully and release resources. If the process does not terminate or is unresponsive, use SIGKILL to force immediate termination.
+
 Process Managment
 jobs - shows actively running jobs
 bg - resume jobs to the background
@@ -507,6 +513,202 @@ DAY 16 & 17: Virtual File System (VFS) & Inodes
 - Concept: VFS abstraction layer. Inode structure (Metadata vs Data blocks).
 - Internals: Why deleting a large file doesn't free up space if a process keeps the File Descriptor open.
 - Practice: Debugging unreleased file handlers using 'lsof'. Hard links vs Soft links.
+
+Virtual File System (VFS)
+Each file system (ext4, XFS, FAT32, NTFS, etc.) has its own internal way of storing and managing files on disk. Without the Virtual File System (VFS), applications would need separate code to work with each file system. The VFS provides a common interface, so applications simply call open(), read(), write(), or close(). The VFS then forwards these requests to the correct file system driver.
+
+Why do we need VFS?
+
+Linux supports many file systems such as:
+
+* ext4
+* XFS
+* FAT32
+* NTFS
+* NFS
+
+Each file system stores files differently.
+If there were no VFS, every application would need to know how each file system works.
+For example, a Python program would need different code for:
+* ext4
+* XFS
+* FAT32
+* NTFS
+This would make programming very difficult.
+
+⸻
+
+What is VFS?
+Virtual File System (VFS) is a layer inside the Linux kernel that sits between applications and the actual file systems.
+Its job is to hide the differences between file systems.
+Applications always communicate with the VFS instead of communicating directly with ext4, XFS, FAT32, etc.
+
+⸻
+
+Simple Architecture
+
+Application
+
+↓
+
+VFS (Virtual File System)
+
+↓
+
+ext4 / XFS / FAT32 / NTFS
+
+↓
+
+Hard Disk
+
+⸻
+
+Real Example
+
+Suppose your computer has:
+
+Disk 1 → ext4
+
+USB Drive → FAT32
+
+External Hard Disk → NTFS
+
+Now your Python program executes:
+
+with open("data.txt") as f:
+    print(f.read())
+
+The Python program never checks:
+
+* Is this ext4?
+* Is this FAT32?
+* Is this NTFS?
+
+Instead it simply asks the VFS:
+
+“Please open this file.”
+The VFS checks which file system owns that file and forwards the request to the correct file system.
+
+⸻
+
+Think of VFS as a Translator
+
+Imagine three people speak different languages.
+
+Person A → English
+
+Person B → Hindi
+
+Person C → Japanese
+A translator stands between them.
+Instead of learning every language, everyone talks to the translator.
+Similarly,
+Applications only talk to the VFS.
+The VFS translates the request into the language understood by ext4, XFS, FAT32, NTFS, etc.
+
+⸻
+
+Difference between File System and VFS
+File System
+* Actually stores files on the disk.
+* Examples: ext4, XFS, FAT32, NTFS.
+* Knows how to read and write data for its own disk format.
+
+Virtual File System (VFS)
+* Does not store any files.
+* It is a layer inside the Linux kernel.
+* Provides one common interface for all file systems.
+* Decides which file system should handle a file request.
+
+⸻
+
+Easy Analogy
+Customer → Application
+Waiter → VFS
+Chef → File System
+The customer never goes directly to the chef.
+The customer gives the order to the waiter.
+The waiter takes the order to the correct chef.
+Similarly,
+Application
+↓
+VFS
+↓
+Correct File System
+⸻
+One-Line Definition
+Virtual File System (VFS) is a kernel layer that provides a common interface between applications and different file systems, allowing applications to access files without knowing which file system is being used.
+
+Inodes
+An inode stores all the metadata of a file in one place (owner, permissions, timestamps, size, and pointers to data blocks). This allows the operating system to quickly retrieve all file information without scanning the entire disk or reading the file contents.
+An inode stores all the metadata of a file in one place (owner, permissions, timestamps, size, and pointers to data blocks). This allows the operating system to quickly retrieve all file information without scanning the entire disk or reading the file contents.
+An inode is the identity card of a file. It contains all the information needed to manage and locate the file on disk, except its name.
+
+Inode - index node header
+What things gets stored in inode
+owners identification - 
+owners group identification
+Protection bit (permission)
+Physical disk address
+file size
+time of creation
+time of last use of file
+time of last modification of file
+number of links to the file
+whether file is a directory 
+
+direct 
+single indirect
+double indirect
+triple indirect
+
+An inode stores metadata about a file and pointers to the file’s data blocks. For small files, the inode uses direct pointers. For larger files, it uses single, double, and triple indirect pointers, where each additional level points to blocks containing more block addresses. This allows Linux to efficiently support both small and very large files without increasing the inode size.
+An inode has a limited number of direct pointers. When a file grows beyond what those pointers can reference, Linux uses indirect pointer blocks. A single indirect pointer references one block of pointers, a double indirect pointer references a block of pointer blocks, and a triple indirect pointer adds one more level of pointer blocks. This allows Linux to efficiently support very large files without making every inode unnecessarily large.
+
+Links 
+A connection between a file name and actual data on the disk
+we can call it as shortcut
+to create link we can use ln -s command -s soft link
+ln -s actual_path path_where_needs_to_create_shortcut
+
+types of links 
+1 - soft links
+ Link will be removed when origianl file is deleted or removed
+ If you modify any of file source file or link file changes will reflect in both files
+ inode number for both files will be different
+If the original file is deleted or moved, the soft link becomes broken (dangling) because it only stores the path.
+2 - hard links
+Deleting renaming removing the original file will not affect the link
+inode number will be same for both files
+why this happends if original file gets removed but still not affect the link file becase they share same inode number
+soft link only refers to path hard links refers to file itself
+
+Suppose I have a log file of 10 GB that is continuously being written to by a Java application. The disk becomes full, so I delete the log file using rm. This removes only the directory entry (filename). However, the application still has the file open through its file descriptor, so the inode and its data blocks remain allocated. Since the inode still exists, the 10 GB of disk space is not freed, and df -h still shows the disk as full. Once the application closes the file or is restarted, the file descriptor is released. As there is no directory entry and no open file descriptor pointing to the inode, Linux deletes the inode and its data blocks, and the disk space is finally reclaimed.
+
+if file descriptor sill shows open with the lsof command you can find it and with the help of kill command you can kill it and close the descriptor
+otherwise you can restart the application/process
+
+lsof command - list of open files
+A powerful utility for system administration and developers to identify which process have which files open
+lsof command without any options list all open files belonging to all active process
+Each line in the output represents an open file with details about
+command name
+process id
+user
+file descriptor
+type of file
+file location
+
+you can filter lsof output to show files opend by 
+A specific process ID
+a specific command name
+This helps when troubleshooting specific applications or investigating process
+lsof -p 1234
+lsof -c firefox
+
+lsof /path/file - shows this file is consumed why which process
+lsof -i - shows all network connections
+lsof -u username 
 
 DAY 18: Memory Management & Virtual RAM
 - Concept: Physical RAM vs Virtual Memory. Paging mechanics and Swap space.
