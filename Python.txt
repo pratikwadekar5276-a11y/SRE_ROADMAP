@@ -205,6 +205,19 @@ with open("myfile.txt", "r") as f:
             print(line.strip()) 
 
 - DAY 20: Working with Modules: Importing built-in tools like 'math', 'random', and 'time'.
+  Time module
+   The time module in python provides a set of functions to work with time related operations such as time keeping formatting and time conversations
+
+ time.time() - shows time from 1st jan 1970 in second
+ time.slee() - pauses for that particular timeperiod in seconds 
+
+Random Module
+The random module in Python is used to generate random numbers, choose random items, shuffle lists, and more. It is part of Python’s standard library, so you don’t need to install it. 
+
+Math Module
+It Provides a set of mathematical functions of numeric operations
+Like basic arithmatic trignometry logirathmic and many more
+
 - DAY 21: Error Handling (Part 1): Using 'try' and 'except' blocks to stop your script from crashing.
 - DAY 22: Error Handling (Part 2): Catching specific errors (ValueError, IndexError) and using 'finally'.
 - DAY 23: List Comprehensions: The beginner-friendly way to write clean, one-line list creation loops.
