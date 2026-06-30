@@ -715,6 +715,123 @@ DAY 18: Memory Management & Virtual RAM
 - Internals: Page Faults (Minor vs Major). Thrashing and its impact on CPU wait times.
 - Practice: Monitoring page caching and swap transitions using 'vmstat'.
 
+Physical memory - 
+You physically install in your computer to manage apps games 
+Its primary memory on which system relies
+used to store data for active programms,
+much faster
+Virtual memory
+Its a space on the drive (SSD, HDD) that serves as memory
+Comes into play when the system is out of physical memory
+Non critical or inactive tasks allocates to it
+Speed is slower since storage devices are not as fast at processing data as dedicated RAM
+size depends on physical memory and avaiable store space
+
+What is a Memory Page?
+A memory page is a fixed-size block of memory used by the operating system to manage RAM and virtual memory.
+
+The operating system does not move entire tasks or processes to virtual memory. Instead, it moves memory pages (typically 4 KB each) that are less frequently used. A process can have some pages in RAM and other pages in swap at the same time. 
+
+Virtual memory
+A signicance of virtual memroy is it provides illusion to the programmer that process whos size is larger than main memory which can also be executed
+
+Instead, the operating system manages memory at the page level. This means different memory pages of the same application can exist in different locations:
+
+* Frequently used memory pages remain in RAM.
+* Less frequently used memory pages are moved to Swap Space (Virtual Memory).
+
+Therefore, one application can have some memory pages in RAM and some memory pages in Swap at the same time.
+
+suppose I have physical memory (RAM) 8GB and i have opend some apps like chorme edge vscode chatgpt and gemini which consumes 2GB each but physical memory is 8GB then virtual memory comes into the scenario it takes some space/memory from drive (SSD HDD) so that the all process can be executed this memory also be called as swap memory 
+Note - if 5 apps opened at same time consuming 2GB each doesent means 4 apps are used by ram and 1 app is used by swap memory instead it means that some part of apps is consumed by physical memory and some part is consumed by virtual memory (less frequently used memory pages in apps)
+
+A process starts executing in RAM. Only later, if RAM becomes scarce, the operating system moves less frequently used memory pages to the disk (swap).
+
+moving memory pages from RAM to Drive is known as swap in swap out or roll in rollout
+
+
+Page Replacement:
+When physical memory (RAM) becomes full, the operating system selects a less frequently used memory page in RAM and moves it to swap space (disk). The freed space in RAM is then used to load a memory page that is currently needed by the CPU or an active process. This process is called page replacement.
+Suppose a memory page is present in RAM but it is not consumed or less prequently consumed by application or process then it get replaced by memory page which is gets consumed more in SWAP this concept is known as page replacement
+
+Page Fault
+Suppose process is running in cpu and cpu needs page 1 from process 1 then it will check in RAM whether the page is present or not if page is not present the concept is called page fault
+
+Page Fault
+
+A page fault occurs when a process tries to access a memory page that is not currently present in physical memory (RAM).
+
+When the CPU executes an instruction, it accesses memory through the Memory Management Unit (MMU). The MMU checks whether the required memory page is present in RAM.
+* If the page is present in RAM: Execution continues normally.
+* If the page is not present in RAM: A page fault occurs.
+
+The operating system then:
+1. Pauses the process.
+2. Finds the required page on disk (either in the executable file or in swap space).
+3. If RAM is full, selects a page to remove (page replacement).
+4. Loads the required page into RAM.
+5. Updates the page table.
+6. Resumes the process.
+
+Minor Page Fault
+A minor page fault occurs when the required memory page is already present in RAM, but the process’s page table does not yet have a valid mapping to it.
+Since the page is already in RAM:
+* ❌ No disk access is required.
+* ✅ The operating system simply updates the page table.
+* ✅ Execution continues almost immediately.
+It is very fast.
+
+Major Page Fault
+A major page fault occurs when the required memory page is not present in RAM.
+The operating system must:
+1. Pause the process.
+2. Read the required page from the SSD/HDD (or swap).
+3. Load it into RAM.
+4. Update the page table.
+5. Resume the process.
+Since disk access is required, it is much slower.
+
+Thrashing
+Thrashing is a condition in which the operating system spends more time swapping memory pages between RAM and disk than executing actual program instructions. It usually occurs when physical memory is insufficient and the working sets of processes cannot fit into RAM.
+Thrashing is directly linked with number of process is present in RAM
+If you executes more process in RAM it directly impacts on CPU utilization
+
+vmstat - virtual memory statics
+vmstat reports information about process memory paging block IO traps disks and cup activities
+The report produced gives avarages since the last reboot
+Process (procs)
+* r → Number of processes currently running or waiting for CPU time.
+* b → Number of processes blocked, usually waiting for disk I/O or other resources.
+⸻
+Memory (memory)
+* swpd → Amount of virtual memory (swap) currently in use.
+* free → Free physical RAM.
+* buff → Memory used for block device buffers.
+* cache → Memory used for file system cache.
+⸻
+Swap (swap)
+* si (Swap In) → Amount of data moved from disk (swap) into RAM per second.
+* so (Swap Out) → Amount of data moved from RAM to disk (swap) per second.
+If si or so remain consistently high, it usually indicates memory pressure and may lead to performance issues.
+⸻
+I/O (io)
+* bi (Blocks In) → Blocks read from storage.
+* bo (Blocks Out) → Blocks written to storage.
+High values indicate heavy disk activity.
+⸻
+System (system)
+* in → Number of interrupts per second.
+* cs → Number of context switches per second.
+⸻
+CPU (cpu)
+* us → CPU time spent running user-space processes.
+* sy → CPU time spent running kernel (system) processes.
+* id → Percentage of CPU time that is idle.
+* wa → CPU time waiting for disk I/O.
+* st → CPU time stolen by the hypervisor (virtual machines).
+
+
+
 DAY 19: Out of Memory (OOM) Killer Mechanics
 - Concept: What happens when the system runs out of physical memory and swap.
 - Internals: How the Kernel evaluates and assigns the 'oom_score' to terminate heavy processes.
