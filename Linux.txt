@@ -836,6 +836,68 @@ DAY 19: Out of Memory (OOM) Killer Mechanics
 - Concept: What happens when the system runs out of physical memory and swap.
 - Internals: How the Kernel evaluates and assigns the 'oom_score' to terminate heavy processes.
 - Practice: Investigating system crashes and process terminations via 'dmesg | grep -i oom'.
+The Out-of-Memory (OOM) Killer is a Linux kernel mechanism that is invoked when memory allocation fails and reclaim mechanisms cannot free sufficient memory. It calculates a badness score (oom_score) for running processes and terminates the most suitable candidate to recover memory and prevent the system from becoming unresponsive.
+
+oom mandate
+When the kernel cannot satisfy a memory allocation request after reclaiming memory and using available swap, it invokes the OOM Killer to prevent the system from becoming unresponsive.
+In the linux memory is rarely empty
+Kernal aggresivey uses ram for page cache to speed up I/O
+
+The OOM killer prevents total system from deadlock
+* Prevents the kernel from running out of allocatable memory.
+* Prevents the system from becoming unresponsive.
+* Frees memory by terminating one or more processes.
+* Maintains overall system stability.
+Protect linux kernal from ram exhaustion
+Vital for high availability remote infrastructure
+Calculate process "Badness" scores (0-1000)
+
+The goal is to terminate the process whose removal is expected to recover the most memory while minimizing the impact on system stability.
+
+It is kernal mechanism that saves that saves your entire system from a total freeze when system runs out of swap and physical memory
+
+Reasons for memory exhaustion
+Memory leaks - slow resource consumption
+traffic spikes - rapid ram exhaustion
+kernal threshold - tigger of oom killer
+cost efficiency - balancing ram vs performance
+
+The goal is kill the process that freezes the most memory while maintiaing system performance
+The algorith is killing high memory users that are not important for core os function
+It looks at the percentage of memory used by the process and its children
+OMM killer essentially asks which process is taking more ram and is it replaceable 
+
+every process which is running on linux server has oom score which is located at proc Directory and it ranges from 0 to 1000
+if score 0 zero means process is safe and as score is increasing the process will target for oom killer
+Every process has an oom_score located under /proc/<PID>/oom_score. The Linux kernel calculates this score using its internal badness algorithm, which considers factors such as memory consumption, child processes, privileges, and oom_score_adj. Higher scores indicate a greater likelihood of being terminated during an OOM event.
+
+As user you will have some process or applications that must never goes down
+Then you can manually influence oom score in oom score ajust file.
+This allows you to set a value between -1000 and 1000
+setting value of -1000 effectively immunises the process telling linux kernal to never kill it or kill it when there is absoultelu no choice
+postive value means the process is likely to be killed
+
+cgroups - set hard limits per process group - control groups 
+cgroups (Control Groups) allow the Linux kernel to enforce CPU, memory, and I/O limits for a group of processes.
+you linux kernal sets memory consumtion for particular process/container if that it is crossing the threshold then that process / container is killed 
+isolation - prevents one app from crashing otherwise
+Limits - marketing bot capped at 512 MB RAM
+Foundation - modern docker/ kubernetes
+
+OOM Killer is the Linux kernel mechanism responsible for selecting and terminating a process when memory allocation fails and the system cannot reclaim sufficient memory. OOMKilled is the resulting state indicating that a process or container was terminated by the OOM Killer, commonly observed in Docker and Kubernetes when a container exceeds its memory limit.
+
+the dmesg command displays messages from kernal ring buffer providing crucial system information about hardware detechtion driver loding and kernal events
+
+demsg - simple and strainghforward command to view kernals messages
+-c - clear buffer after reading
+-H - human readable timestamps
+-T - print human readable time
+-w wait for new messages
+-x decode facility and level
+-k print kernal message only
+
+Application logs tell you what the application is doing.
+dmesg tells you what the Linux kernel is doing.
 
 DAY 20: Storage Internals & File Systems
 - Concept: Block devices, Partition tables (GPT/MBR), File System Types (ext4, XFS).

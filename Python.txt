@@ -219,8 +219,24 @@ It Provides a set of mathematical functions of numeric operations
 Like basic arithmatic trignometry logirathmic and many more
 
 - DAY 21: Error Handling (Part 1): Using 'try' and 'except' blocks to stop your script from crashing.
+Exception handling is the process of detecting and handling runtime errors (exceptions) so that a program can continue executing gracefully instead of terminating unexpectedly.
+Exception handeling is the process of resposing unwanted or unexpected events when a computer program runs
+Exception handeling deals with these events to avoid the program or system from crashing
+without this process exceptions would disrupt the normal operations of the program
+there can be value error index error and multiple erros this basically needs to use when you know there can be error if wrong input goes
+
+
 - DAY 22: Error Handling (Part 2): Catching specific errors (ValueError, IndexError) and using 'finally'.
+value error - if you passed wrong value (int is expected you passed string)
+index error - if you are try to access index of any list set tuple which does not exist
+finally - 
+finally block will always execute irrestive if there is anything in try and except block
+It is generally used for doing the concluding taks like closing file resources or closing database connections
+
 - DAY 23: List Comprehensions: The beginner-friendly way to write clean, one-line list creation loops.
+List comprehension is a concise way to write a for loop that creates a list. It can also include an optional if condition to filter elements, allowing the same logic to be written in a single line instead of multiple lines.
+“List comprehension is a concise Python syntax for creating a new list using a for loop, with an optional if condition for filtering elements. It is used when the goal is to generate a list in a more readable and compact way.”
+
 - DAY 24: Introduction to Objects: What is Object-Oriented Programming (OOP) in simple words?
 - DAY 25: Classes & Instances: Creating your first custom Class and setting attributes with __init__.
 - DAY 26: Class Methods: Writing functions inside your classes to modify object states.
